@@ -13,11 +13,18 @@ class VarStore(object):
 class MultiVarStore(VarStore):
     pass
 
+class _LocalVarStoreDaemonList(list):
+    def __getitem__(self, key):
+        if not isinstance(key, int):
+            return list.__getitem__(self, self.index(key))
+        else:
+            return list.__getitem__(self, key)
+
 class LocalVarStore(VarStore):
     __depot_id = None
     __depot_state = None
     __depot_replication_factor = None
-    __daemon_list = []
+    __daemon_list = _LocalVarStoreDaemonList()
     resolv = {}
 
     def set_depot_id(self, depot_id):
@@ -49,10 +56,10 @@ class LocalVarStore(VarStore):
         return self.__daemon_list
 
     def set_daemon_host(self, daemon, daemon_id):
-        self.__daemon_list[self.__daemon_list.index(daemon)].id = daemon_id
+        self.__daemon_list[daemon].id = daemon_id
 
     def get_daemon_host(self, daemon):
-        return self.__daemon_list[self.__daemon_list.index(daemon)].id
+        return self.__daemon_list[daemon].id
 
     def set_depot_replication_factor(self, factor):
         self.__depot_replication_factor = factor
@@ -67,10 +74,10 @@ class LocalVarStore(VarStore):
             return None
 
     def set_daemon_ceph_id(self, daemon, ceph_id):
-        self.__daemon_list[self.__daemon_list.index(daemon)].ceph_id = ceph_id
+        self.__daemon_list[daemon].ceph_id = ceph_id
 
     def get_daemon_ceph_id(self, daemon):
-        return self.__daemon_list[self.__daemon_list.index(daemon)].ceph_id
+        return self.__daemon_list[daemon].ceph_id
 
 
 class Depot(object):

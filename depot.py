@@ -1,23 +1,10 @@
 from tccephconf import TCCephConf
 
-class property_generator(type):
-    def __init__(cls, name, bases, dict):
-        super(autoprop, cls).__init__(name, bases, dict)
-        props = {}
-        for member in dict.keys():
-            if member.startswith("_get_") or member.startswith("_set_"):
-                props[member[5:]] = 1
-        for prop in props.keys():
-            fget = getattr(cls, "_get_%s" % prop, None)
-            fset = getattr(cls, "_set_%s" % prop, None)
-            setattr(cls, prop, property(fget, fset))
-
 class VarStore(object):
-    __metaclass__ = property_generator
-    def _get_depot_id(self): pass
-    def _set_depot_id(self, id): pass
-    def _get_depot_state(self): pass
-    def _set_depot_state(self, state): pass
+    def get_depot_id(self): pass
+    def set_depot_id(self, id): pass
+    def get_depot_state(self): pass
+    def set_depot_state(self, state): pass
     def add_daemon(self, daemon): pass
     def remove_daemon(self, daemon): pass
     def remove_daemons(self, daemon_list): pass
@@ -33,16 +20,16 @@ class LocalVarStore(VarStore):
     depot_replication_factor = None
     resolv = {}
 
-    def _set_depot_id(self, depot_id):
+    def set_depot_id(self, depot_id):
         self.__depot_id = depot_id
 
-    def _get_depot_id(self):
+    def get_depot_id(self):
         return self.__depot_id
 
-    def _set_depot_state(self, state):
+    def set_depot_state(self, state):
         self.__depot_state = state
 
-    def _get_depot_state(self):
+    def get_depot_state(self):
         return self.__depot_state
 
     def add_daemon(self, daemon):
@@ -94,7 +81,7 @@ class Depot(object):
     }
     def __init__(self, id, varstore, replication_factor=3, state=None):
         self.var = varstore
-        self.var.depot_id = id
+        self.var.set_depot_id(id)
         self.set_replication_factor(replication_factor)
         if state is None:
             state = self.CONSTANTS['STATE_OFFLINE']
@@ -102,7 +89,7 @@ class Depot(object):
     def __del__(self): pass
     def get_info(self):
         depot_info = {
-            'depot_id': self.var.depot_id,
+            'depot_id': self.var.get_depot_id(),
             'depot_replication': self.var.get_replication_factor(),
             'depot_state': ['not ready', 'ready'][self.var.get_depot_state()],
             'depot_capacity': 0,
@@ -182,7 +169,7 @@ class Depot(object):
 
     def start(self):
         config = TCCephConf()
-        config.create_default(self.var.depot_id)
+        config.create_default(self.var.get_depot_id())
 
         daemon_list = self.get_daemon_list()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
@@ -191,7 +178,7 @@ class Depot(object):
             daemon.add_to_config(config)
             next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
 
-        with open('%s.conf' % self.var.depot_id, 'wb') as config_file:
+        with open('%s.conf' % self.var.get_depot_id(), 'wb') as config_file:
             config.write(config_file)
         for daemon in daemon_list:
             daemon.set_config(config)

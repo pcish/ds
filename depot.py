@@ -15,9 +15,9 @@ class MultiVarStore(VarStore):
 
 class LocalVarStore(VarStore):
     __depot_id = None
-    depot_state = None
-    daemon_list = []
-    depot_replication_factor = None
+    __depot_state = None
+    __depot_replication_factor = None
+    __daemon_list = []
     resolv = {}
 
     def set_depot_id(self, depot_id):
@@ -33,32 +33,32 @@ class LocalVarStore(VarStore):
         return self.__depot_state
 
     def add_daemon(self, daemon):
-        assert(self.daemon_list.count(daemon) == 0)
-        self.daemon_list.append(daemon)
+        assert(self.__daemon_list.count(daemon) == 0)
+        self.__daemon_list.append(daemon)
 
     def remove_daemon(self, daemon):
-        self.daemon_list.remove(daemon)
-        assert(self.daemon_list.count(daemon) == 0)
+        self.__daemon_list.remove(daemon)
+        assert(self.__daemon_list.count(daemon) == 0)
 
     def remove_daemons(self, daemon_list):
         for daemon in daemon_list:
-            self.daemon_list.remove(daemon)
-            assert(self.daemon_list.count(daemon) == 0)
+            self.__daemon_list.remove(daemon)
+            assert(self.__daemon_list.count(daemon) == 0)
 
     def get_daemon_list(self):
-        return self.daemon_list
+        return self.__daemon_list
 
     def set_daemon_host(self, daemon, daemon_id):
-        self.daemon_list[self.daemon_list.index(daemon)].id = daemon_id
+        self.__daemon_list[self.__daemon_list.index(daemon)].id = daemon_id
 
     def get_daemon_host(self, daemon):
-        return self.daemon_list[self.daemon_list.index(daemon)].id
+        return self.__daemon_list[self.__daemon_list.index(daemon)].id
 
     def set_depot_replication_factor(self, factor):
-        self.depot_replication_factor = factor
+        self.__depot_replication_factor = factor
 
     def get_replication_factor(self):
-        return self.depot_replication_factor
+        return self.__depot_replication_factor
 
     def host_id_to_ip(self, host_id):
         if host_id in self.resolv:
@@ -67,10 +67,10 @@ class LocalVarStore(VarStore):
             return None
 
     def set_daemon_ceph_id(self, daemon, ceph_id):
-        self.daemon_list[self.daemon_list.index(daemon)].ceph_id = ceph_id
+        self.__daemon_list[self.__daemon_list.index(daemon)].ceph_id = ceph_id
 
     def get_daemon_ceph_id(self, daemon):
-        return self.daemon_list[self.daemon_list.index(daemon)].ceph_id
+        return self.__daemon_list[self.__daemon_list.index(daemon)].ceph_id
 
 
 class Depot(object):

@@ -33,7 +33,7 @@ class TestTCCephConf(unittest.TestCase):
         self.assertEquals(conf.get('mon.0', 'addr'), '192.168.0.1:6789')
         self.assertEquals(conf.get('osd.1', 'osd journal'), '/var/log/journal/osd$id')
 
-    def tearDownss(self):
+    def tearDown(self):
         os.remove('test_ceph.conf')
 
 class TestGetMonIpFromConfig(unittest.TestCase):
@@ -48,11 +48,11 @@ class TestGetMonIpFromConfig(unittest.TestCase):
     def test_multiple_mon(self):
         config = TCCephConf()
         config.create_default()
+        (id, hostname, ip, port) = ('2', '192.168.0.3', None, None)
+        config.add_mon(id, hostname, ip, port)
         (id, hostname, ip, port) = ('0', '192.168.0.1', None, None)
         config.add_mon(id, hostname, ip, port)
         (id, hostname, ip, port) = ('1', '192.168.0.2', None, None)
-        config.add_mon(id, hostname, ip, port)
-        (id, hostname, ip, port) = ('2', '192.168.0.3', None, None)
         config.add_mon(id, hostname, ip, port)
         self.assertEqual(config.get_active_mon_ip(), ('192.168.0.1', '0'))
 
@@ -61,36 +61,10 @@ class TestGetMonIpFromConfig(unittest.TestCase):
         config.create_default()
         (id, hostname, ip, port) = ('2', '192.168.0.3', None, None)
         config.add_mon(id, hostname, ip, port)
+        (id, hostname, ip, port) = ('1', '192.168.0.2', None, None)
+        config.add_mon(id, hostname, ip, port)
         self.assertEqual(config.get_active_mon_ip(), (hostname, id))
 
 
-def test_read(filename):
-    f = open(filename, 'r')
-    tmp = open('tmp', 'w')
-    for line in f:
-        tmp.write(line.lstrip())
-    tmp.close()
-    f.close()
-
-def test_default():
-    conf = TCCephConf()
-    conf.create_default('hfaldjalfnvotij-fsd-dfvl')
-    conf.add_mon('0', '10.201.193.140')
-    print conf.get('mon.0', 'addr')
-    print conf.get('tcloud', 'depot')
-#    conf.read('tmp')
-#    conf.add_section('tcloud')
-#    conf.set('tcloud', 'depot id', 'hfaldjalfnvotij-fsd-dfvl')
-#    for k, v in conf.defaults().iteritems():
-#        print k, v
-#        conf.set('global', k, v)
-#    sections = conf.sections()
-#    for s in sections:
-#        print s
-    with open('new.conf', 'wb') as outfile:
-        conf.write(outfile)
-
-
 if __name__ == '__main__':
-    #test_read()
     unittest.main()

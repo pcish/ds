@@ -55,7 +55,7 @@ if __name__ == '__main__':
         ]
     })
 
-    daemons = service.__service._depot[did].get_daemon_list()
+    daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
         print daemon.id, daemon.TYPE
     """print '--------------'

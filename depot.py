@@ -2,6 +2,7 @@ from tccephconf import TCCephConf
 from daemon import Mon, Mds, Osd
 
 class Depot(object):
+    service_globals = None
     var = None
     CONSTANTS = {
         'STATE_OFFLINE': 0,
@@ -9,7 +10,8 @@ class Depot(object):
     }
     config_file = None
 
-    def __init__(self, id, varstore, replication_factor=3, state=None):
+    def __init__(self, service_globals, id, varstore, replication_factor=3, state=None):
+        self.service_globals = service_globals
         self.var = varstore
         self.var.set_depot_id(id)
         self.var.set_replication_factor(replication_factor)
@@ -35,11 +37,11 @@ class Depot(object):
                 self.var.resolv[node['node_id']] = node['node_ip']
             for role in node['storage_roles']:
                 if role == 'mon':
-                    self._add_daemon(node['node_id'], Mon(self.var))
+                    self._add_daemon(node['node_id'], Mon(self.service_globals, self.var))
                 elif role == 'mds':
-                    self._add_daemon(node['node_id'], Mds(self.var))
+                    self._add_daemon(node['node_id'], Mds(self.service_globals, self.var))
                 elif role == 'osd':
-                    self._add_daemon(node['node_id'], Osd(self.var))
+                    self._add_daemon(node['node_id'], Osd(self.service_globals, self.var))
 
         daemon_count = self._get_daemon_count()
         if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
@@ -80,10 +82,10 @@ class Depot(object):
     def set_replication_factor(self, factor):
         assert(self.config_file is not None)
         cmd = "ceph -c %s osd pool set metadata size %d" % (self.config_file, factor)
-        self._run_shell_command(cmd)
+        self.service_globals.run_shell_command(cmd)
 
         cmd = "ceph -c %s osd pool set data size %d" % (self.config_file, factor)
-        self._run_shell_command(cmd)
+        self.service_globals.run_shell_command(cmd)
 
     @staticmethod
     def _get_meets_min_requirements(replication, num_mon, num_mds, num_osd):
@@ -117,7 +119,7 @@ class Depot(object):
             daemon.set_config(config)
 
         cmd = "mkcephfs -c %s --allhosts" % (self.config_file, )
-        self._run_shell_command(cmd)
+        self.service_globals.run_shell_command(cmd)
 
         for daemon in daemon_list:
             daemon.activate()
@@ -126,7 +128,6 @@ class Depot(object):
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
 
     def deactivate(self): pass
-    @staticmethod
-    def _run_shell_command(cmd): pass
+
 
 

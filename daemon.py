@@ -1,10 +1,12 @@
 class Daemon:
+    service_globals = None
     var = None
     DAEMON_NAME = None
     conf_file_path = None
     INIT_SCRIPT = '/etc/init.d/ceph'
     TYPE = None
-    def __init__(self, varstore):
+    def __init__(self, service_globals, varstore):
+        self.service_globals = service_globals
         self.var = varstore
 
     def get_host_id(self):
@@ -21,13 +23,11 @@ class Daemon:
 
     def add_to_config(self, config): pass
 
-    def _run_remote_command(self, command):
-        pass
     def prepare(self):
         pass
     def activate(self):
         cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
-        self._run_remote_command(cmd)
+        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
     def status(self):
         pass
@@ -70,18 +70,18 @@ class Mon(Daemon):
     def prepare(self):
         # add monitor to the mon map
         cmd = 'ceph -c %s mon add %s %s:6789' % (self.conf_file_path, self.get_host_id(), self.get_host_ip())
-        Depot._run_shell_command(cmd)
+        Depot.service_globals.run_shell_command(cmd)
 
         # copy mon dir from an existing to the new monitor
         cmd = 'scp -r %s:%s/mon%d /tmp/mon' %  \
                 (args['monitorIP'], depot_conf_constants['MON_DATA_PREFIX'], args['monitorID'])
-        Depot._run_shell_command(cmd)
+        Depot.service_globals.run_shell_command(cmd)
 
         cmd = 'scp -r /tmp/mon %s:/tmp/mon%d' %  \
                 (info['IP'], info['cephid'])
-        Depot._run_shell_command(cmd)
+        Depot.service_globals.run_shell_command(cmd)
 
         cmd = 'cp -r /tmp/mon%d %s' % (info['cephid'], depot_conf_constants['MON_DATA_PREFIX'])
-        self._run_remote_command(info['IP'], cmd)
+        self.service_globals.run_remote_command(info['IP'], cmd)
 
         _DeployConfigrationFile(info['DepotID'])

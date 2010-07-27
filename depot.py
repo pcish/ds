@@ -94,7 +94,7 @@ class Depot(object):
                 cmd = 'ceph -c %s mon add %s %s:6789' % (self.conf_file_path, self.get_host_id(), self.get_host_ip())
                 self.service_globals.run_shell_command(cmd)
                 # copy mon dir from an existing to the new monitor
-                (active_mon_ip, active_mon_id) = self.get_active_mon_ip_from_config(self.config)
+                (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
                 cmd = 'scp -r %s:%s/mon%d %s:%s' %  \
                         (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
                         self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))

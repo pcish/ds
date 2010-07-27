@@ -80,4 +80,11 @@ class TCCephConf(ConfigParser.RawConfigParser):
         self.set('mon', 'debug mon', '%s' % debug_level)
         self.set('global', 'debug ms', '%s' % debug_level)
 
-
+    def get_active_mon_ip(self):
+        sections = self.sections()
+        sections.sort()
+        for i in range(sections.__len__()):
+            if sections[i].startswith('mon.') and sections[i].__len__() > 4:
+                (active_mon_ip, _, _) = self.get(sections[i], 'addr').partition(':')
+                break
+        return (active_mon_ip, '%s' % sections[i][4:])

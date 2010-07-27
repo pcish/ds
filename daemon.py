@@ -50,20 +50,6 @@ class Daemon:
     def getDaemonArgs(self):
         return '-c %s' % self.conf_file_path
 
-    @staticmethod
-    def get_active_mon_ip_from_config(config):
-        active_mon_ip = None
-        i = 0
-        while active_mon_ip is None:
-            try:
-                addr_string = config.get('mon.%s' % i, 'addr')
-            except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-                i = i + 1
-            else:
-                (active_mon_ip, _, _) = addr_string.partition(':')
-        return (active_mon_ip, '%s' % i)
-
-
 
 class Osd(Daemon):
     DAEMON_NAME = 'cosd'

@@ -2,12 +2,43 @@ import uuid
 from depot import LocalVarStore as VariableStore
 from depot import *
 
-#global depot
-depot = {}
-
 class TCDSAPI:
     SUCCESS = 0
     ERROR_GENERAL = 1
+
+class TcdsService(object):
+    __depot = {}
+    def create_depot(depot_id, varstore, replication_factor):
+        depot[NewDepotID] = Depot(depot_id, varstore, replication_factor)
+
+    def remove_depot(depot_id):
+        pass
+
+    def query_depot(depot_id):
+        depot_info = depot[depot_id].get_info()
+        return depot_info
+
+    def add_nodes_to_depot(depot_id, node_list):
+        depot_info = depot[depot_id].add_nodes(node_list)
+        return depot_info
+
+    def del_nodes_from_depot(depot_id, node_list):
+        depot_info = depot[args['depot_id']].remove_nodes(args['node_list'])
+        return depot_info
+
+
+"""TCDS API
+Exports the functions:
+    createDepot
+    getDepotInfo
+    addStorageNodes
+    removeStorageNodes
+
+The API functions are basically wrappers for their companion functions in
+TcdsService. An instance of the TcdsService class is maintained for the
+functions to call.
+"""
+__service = TcdsService()
 
 def createDepot(args):
     """
@@ -28,7 +59,7 @@ def createDepot(args):
         replication_number = 3  # default replication number
 
     try:
-        depot[NewDepotID] = Depot(NewDepotID, VariableStore(), replication_number)
+        __service.create_depot(NewDepotID, VariableStore(), replication_number)
     except Exception as e:
         response = {
             'result_code': TCDSAPI.ERROR_GENERAL,
@@ -53,7 +84,7 @@ def getDepotInfo(args):
     """
 
     try:
-        depot_info = depot[args['depot_id']].get_info()
+        depot_info = __service.query_depot(args['depot_id'])
     except KeyError:
         response = {
             'result_code': TCDSAPI.ERROR_GENERAL,
@@ -83,7 +114,7 @@ def addStorageNodes(args):
             * error_message on failure
     """
     try:
-        depot_info = depot[args['depot_id']].add_nodes(args['node_spec_list'])
+        depot_info = __service.add_nodes_to_depot(args['depot_id']], args['node_spec_list'])
     except KeyError, e:
         print e
         response = {
@@ -118,7 +149,7 @@ def removeStorageNodes(args):
     }
     """
     try:
-        depot_info = depot[args['depot_id']].remove_nodes(args['node_list'])
+        depot_info = __service.del_nodes_from_depot(args['depot_id'], args['node_list'])
     except KeyError:
         response = {
             'result_code': TCDSAPI.ERROR_GENERAL,

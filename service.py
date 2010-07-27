@@ -1,5 +1,5 @@
 import uuid
-from depot import LocalVarStore as VariableStore
+from varstore import LocalVarStore as VariableStore
 from depot import *
 
 class TCDSAPI:

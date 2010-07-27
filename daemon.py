@@ -25,13 +25,13 @@ class Daemon:
         pass
     def prepare(self):
         pass
-    def start(self):
+    def activate(self):
         cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
         self._run_remote_command(cmd)
 
     def status(self):
         pass
-    def stop(self):
+    def deactivate(self):
         pass
     def getDaemonArgs(self):
         return '-c %s' % self.conf_file_path

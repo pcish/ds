@@ -40,7 +40,7 @@ class Depot(object):
 
         daemon_count = self._get_daemon_count()
         if Depot._get_meets_min_requirements(replication=self.get_replication_factor(), **daemon_count):
-            self.start()
+            self.activate()
         else:
             print daemon_count, self.get_replication_factor()
 
@@ -95,7 +95,7 @@ class Depot(object):
         else:
             return False
 
-    def start(self):
+    def activate(self):
         config = TCCephConf()
         config.create_default(self.var.get_depot_id())
 
@@ -116,7 +116,7 @@ class Depot(object):
 
         # start all nodes
         for daemon in daemon_list:
-            daemon.start()
+            daemon.activate()
 
         # set replication factor
         replication = self.get_replication_factor()
@@ -130,7 +130,7 @@ class Depot(object):
         # Change Depot Status to live
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
 
-    def stop(self): pass
+    def deactivate(self): pass
     @staticmethod
     def _run_shell_command(cmd): pass
 

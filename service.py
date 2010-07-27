@@ -46,6 +46,16 @@ functions to call.
 """
 _service = TcdsService(Globals())
 
+class TcdsApiErrorResponse(dict):
+    def __init__(self, code, message):
+        self['result_code'] = _service.service_globals.error_code(code)
+        self['error_message'] = '%s' % message
+
+class TcdsApiSuccessResponse(dict):
+    def __init__(self, additional_fields):
+        self['result_code'] = _service.service_globals.error_code(Globals.SUCCESS)
+        self.update(additional_fields)
+
 def createDepot(args):
     """
     INPUT
@@ -67,17 +77,9 @@ def createDepot(args):
     try:
         _service.create_depot(NewDepotID, VariableStore(), replication_number)
     except Exception as e:
-        print e
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-            'error_message': e
-        }
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.SUCCESS),
-            'depot_id': NewDepotID
-        }
-    return response
+        return TcdsApiSuccessResponse({'depot_id': NewDepotID})
 
 def getDepotInfo(args):
     """
@@ -93,21 +95,11 @@ def getDepotInfo(args):
     try:
         depot_info = _service.query_depot(args['depot_id'])
     except KeyError:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-            'error_message': 'No such depot.'
-        }
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-            'error_message': e
-        }
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.SUCCESS),
-            'depot_info': depot_info
-        }
-    return response
+        return TcdsApiSuccessResponse({'depot_info': depot_info})
 
 def addStorageNodes(args):
     """
@@ -123,24 +115,11 @@ def addStorageNodes(args):
     try:
         depot_info = _service.add_nodes_to_depot(args['depot_id'], args['node_spec_list'])
     except KeyError, e:
-        print e
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-            'error_message': 'No such depot.'
-        }
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-            'error_message': e
-        }
-        print e
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.SUCCESS),
-            'depot_info': depot_info
-        }
-    print response
-    return response
+        return TcdsApiSuccessResponse({'depot_info': depot_info})
 
 def removeStorageNodes(args):
     """
@@ -158,18 +137,8 @@ def removeStorageNodes(args):
     try:
         depot_info = _service.del_nodes_from_depot(args['depot_id'], args['node_list'])
     except KeyError:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-            'error_message': 'No such depot.'
-        }
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        response = {
-                    'result_code': _service.service_globals.error_code(Globals.ERROR_GENERAL),
-                    'error_message': e
-                    }
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:
-        response = {
-            'result_code': _service.service_globals.error_code(Globals.SUCCESS),
-            'depot_info': depot_info
-        }
-    return response
+        return TcdsApiSuccessResponse({'depot_info': depot_info})

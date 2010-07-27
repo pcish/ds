@@ -14,6 +14,11 @@ class LocalDebugServiceGlobals(ServiceGlobals):
     def error_code(self, errorno):
         return errorno
 
+    def run_shell_command(self, command):
+        print command
+
+    def run_remote_command(self, remote_host, command):
+        print 'ssh %s %s' % (remote_host, command)
 
 class TcServiceGlobals(ServiceGlobals):
     logger = None

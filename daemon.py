@@ -80,6 +80,14 @@ class Osd(Daemon):
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd journal')),)
         self.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
+        # get a copy of monmap
+        cmd = 'ceph -c %s mon getmap -o /tmp/monmap' % (self.conf_file_path,)
+        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+
+        # formatting new osd
+        cmd = '"cosd -c %s -i %d --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_id())
+        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+
 
 class Mds(Daemon):
     DAEMON_NAME = 'cmds'
@@ -98,19 +106,8 @@ class Mon(Daemon):
         config.add_osd(self.get_ceph_id(), self.get_host_ip())
 
     def setup(self):
-        # add monitor to the mon map
-        cmd = 'ceph -c %s mon add %s %s:6789' % (self.conf_file_path, self.get_host_id(), self.get_host_ip())
-        self.service_globals.run_shell_command(cmd)
-
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)
-
-        # copy mon dir from an existing to the new monitor
-        (active_mon_ip, active_mon_id) = self.get_active_mon_ip_from_config(self.config)
-        cmd = 'scp -r %s:%s/mon%d %s:%s' %  \
-                (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
-                self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
-                )
-        self.service_globals.run_shell_command(cmd)
+        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
     def deactivate(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_id(self))

@@ -1,3 +1,4 @@
+import logging
 from tccephconf import TCCephConf
 from daemon import Mon, Mds, Osd
 
@@ -8,7 +9,7 @@ class Depot(object):
         'STATE_OFFLINE': 0,
         'STATE_ONLINE': 1
     }
-    config_file = None
+    config_file_path = None
 
     def __init__(self, service_globals, id, varstore, replication_factor=3, state=None):
         self.service_globals = service_globals
@@ -47,7 +48,7 @@ class Depot(object):
         if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
             self.activate()
         else:
-            print daemon_count, self.var.get_replication_factor()
+            self.service_globals.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_replication_factor()))
 
     def remove_nodes(self, args):
         daemon_list = self.var.get_daemon_list()
@@ -68,6 +69,33 @@ class Depot(object):
     def _add_daemon(self, host_id, daemon):
         self.var.add_daemon(daemon)
         self.var.set_daemon_host(daemon, host_id)
+        if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
+            daemon.setup()
+            if isinstance(daemon, Osd):
+                # set max osd
+                # NB: we assume that the osd id's are monotonically increasing
+                cmd = 'ceph -c %s osd setmaxosd %d' % (self.conf_file_path, daemon.get_ceph_id() + 1)
+                self.service_globals.run_shell_command(cmd)
+
+                # update crush map
+                cmd = 'osdmaptool --createsimple %d --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (deamon.get_ceph_id() + 1)
+                self.service_globals.run_shell_command(cmd)
+
+                cmd = 'ceph osd setcrushmap -i /tmp/crush.new'
+                self.service_globals.run_shell_command(cmd)
+            elif isinstance(daemon, Mon):
+                # add monitor to the mon map
+                cmd = 'ceph -c %s mon add %s %s:6789' % (self.conf_file_path, self.get_host_id(), self.get_host_ip())
+                self.service_globals.run_shell_command(cmd)
+                # copy mon dir from an existing to the new monitor
+                (active_mon_ip, active_mon_id) = self.get_active_mon_ip_from_config(self.config)
+                cmd = 'scp -r %s:%s/mon%d %s:%s' %  \
+                        (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
+                        self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
+                        )
+                self.service_globals.run_shell_command(cmd)
+
+            daemon.activate()
 
     def get_daemon_list(self):
         return self.var.get_daemon_list()
@@ -80,11 +108,11 @@ class Depot(object):
         return daemon_count
 
     def set_replication_factor(self, factor):
-        assert(self.config_file is not None)
-        cmd = "ceph -c %s osd pool set metadata size %d" % (self.config_file, factor)
+        assert(self.config_file_path is not None)
+        cmd = "ceph -c %s osd pool set metadata size %d" % (self.config_file_path, factor)
         self.service_globals.run_shell_command(cmd)
 
-        cmd = "ceph -c %s osd pool set data size %d" % (self.config_file, factor)
+        cmd = "ceph -c %s osd pool set data size %d" % (self.config_file_path, factor)
         self.service_globals.run_shell_command(cmd)
 
     @staticmethod
@@ -113,12 +141,13 @@ class Depot(object):
             daemon.add_to_config(config)
             next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
 
-        with open('%s.conf' % self.var.get_depot_id(), 'wb') as self.config_file:
-            config.write(self.config_file)
+        self.config_file_path = '%s.conf' % self.var.get_depot_id()
+        with open(self.config_file_path, 'wb') as config_file:
+            config.write(config_file)
         for daemon in daemon_list:
             daemon.set_config(config)
 
-        cmd = "mkcephfs -c %s --allhosts" % (self.config_file, )
+        cmd = "mkcephfs -c %s --allhosts" % (self.config_file_path, )
         self.service_globals.run_shell_command(cmd)
 
         for daemon in daemon_list:

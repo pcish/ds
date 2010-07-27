@@ -2,13 +2,37 @@ import ConfigParser
 import sys
 import string
 
-class TCCephConf(ConfigParser.ConfigParser):
+class CephConfFile(object):
+    __fd = None
+    def __init__(self, filename):
+        self.__fd = open(filename)
+    def readline(self, size=-1):
+        line = '\n'
+        while line != '' and line.lstrip() == '':
+            line = self.__fd.readline(size)
+        return line.lstrip()
+
+    def __del__(self):
+        self.__fd.close()
+
+class TCCephConf(ConfigParser.RawConfigParser):
     DEFAULTS = {
         'MON_DATA': '/data/ceph/mon$id',
         'PID_FILE': '/var/run/ceph/$name.pid',
         'OSD_DATA': '/spare/osd$id',
         'OSD_JOURNAL': '/data/ceph/osdjournal/osd$id'
     }
+    def get(self, section, option):
+        try:
+            return ConfigParser.RawConfigParser.get(self, section, option)
+        except ConfigParser.NoOptionError as e:
+            if section.startswith(('mon','mds','osd')):
+                if section.__len__() > 3:
+                    return self.get(section[:3], option)
+                elif section.__len__() == 3:
+                    return self.get('global', option)
+            raise e
+
     def create_default(self, depot_id=None):
         self.add_section('tcloud')
         if depot_id is not None:
@@ -45,7 +69,7 @@ class TCCephConf(ConfigParser.ConfigParser):
         self.set(mds_name, 'host', '%s' % hostname)
 
     def add_osd(self, id, hostname):
-        osd_name = 'osd%s' % id
+        osd_name = 'osd.%s' % id
         self.add_section(osd_name)
         self.set(osd_name, 'host', '%s' % hostname)
 

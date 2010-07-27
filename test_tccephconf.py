@@ -1,4 +1,40 @@
-from tccephconf import TCCephConf
+import unittest
+import os
+from tccephconf import *
+
+class TestTCCephConf(unittest.TestCase):
+    def setUp(self):
+        test_conf_contents = """
+[global]
+    debug = 20
+\tosd journal = /var/log/journal/osd$id
+[mon]
+    mon data = /data/ceph/mon$id
+ [mon.0]
+    addr = 192.168.0.1:6789
+
+
+[osd]
+    osd data = /data/ceph/osd$id
+[osd0]
+    host = abc
+[osd.1]
+    osd data = /random/prefix
+"""
+        with open('test_ceph.conf', 'w') as f:
+            f.write(test_conf_contents)
+    def test_read(self):
+        f = CephConfFile('test_ceph.conf')
+        conf = TCCephConf()
+        conf.readfp(f)
+        self.assertEquals(conf.get('global', 'debug'), '20')
+        self.assertEquals(conf.get('osd0', 'osd data'), '/data/ceph/osd$id')
+        self.assertEquals(conf.get('osd.1', 'osd data'), '/random/prefix')
+        self.assertEquals(conf.get('mon.0', 'addr'), '192.168.0.1:6789')
+        self.assertEquals(conf.get('osd.1', 'osd journal'), '/var/log/journal/osd$id')
+
+    def tearDownss(self):
+        os.remove('test_ceph.conf')
 
 def test_read(filename):
     f = open(filename, 'r')
@@ -29,4 +65,4 @@ def test_default():
 
 if __name__ == '__main__':
     #test_read()
-    test_default()
+    unittest.main()

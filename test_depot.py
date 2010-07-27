@@ -1,4 +1,5 @@
-from service import *
+#from service import *
+import service
 from depot import Depot
 
 def test_min_req_check():
@@ -24,26 +25,26 @@ def test_min_req_check():
 if __name__ == '__main__':
     test_min_req_check()
     try:
-        res = createDepot({'replication_number': 2,})
+        res = service.createDepot({'replication_number': 2,})
         print res['depot_id']
         did = res['depot_id']
     except Exception as e:
         #print res['error_message']
         print e
     try:
-        info = getDepotInfo({'depot_id': 'i bet this id does not exist'})['depot_info']
+        info = service.getDepotInfo({'depot_id': 'i bet this id does not exist'})['depot_info']
     except:
         pass
     else:
         assert(0)
     try:
-        info = getDepotInfo({'depot_id': did})
+        info = service.getDepotInfo({'depot_id': did})
     except Exception, e:
         print e
     else:
         print info
 
-    addStorageNodes({
+    service.addStorageNodes({
         'depot_id': did,
         'node_spec_list': [
             { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon', 'osd' ], 'node_ip': '10.201.193.170'},
@@ -54,7 +55,7 @@ if __name__ == '__main__':
         ]
     })
 
-    daemons = depot[did].get_daemon_list()
+    daemons = service.__service._depot[did].get_daemon_list()
     for daemon in daemons:
         print daemon.id, daemon.TYPE
     """print '--------------'

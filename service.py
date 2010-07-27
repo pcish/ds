@@ -7,23 +7,23 @@ class TCDSAPI:
     ERROR_GENERAL = 1
 
 class TcdsService(object):
-    __depot = {}
-    def create_depot(depot_id, varstore, replication_factor):
-        depot[NewDepotID] = Depot(depot_id, varstore, replication_factor)
+    _depot = {}
+    def create_depot(self, depot_id, varstore, replication_factor):
+        self._depot[depot_id] = Depot(depot_id, varstore, replication_factor)
 
-    def remove_depot(depot_id):
+    def remove_depot(self, depot_id):
         pass
 
-    def query_depot(depot_id):
-        depot_info = depot[depot_id].get_info()
+    def query_depot(self, depot_id):
+        depot_info = self._depot[depot_id].get_info()
         return depot_info
 
-    def add_nodes_to_depot(depot_id, node_list):
-        depot_info = depot[depot_id].add_nodes(node_list)
+    def add_nodes_to_depot(self, depot_id, node_list):
+        depot_info = self._depot[depot_id].add_nodes(node_list)
         return depot_info
 
-    def del_nodes_from_depot(depot_id, node_list):
-        depot_info = depot[args['depot_id']].remove_nodes(args['node_list'])
+    def del_nodes_from_depot(self, depot_id, node_list):
+        depot_info = self._depot[depot_id].remove_nodes(node_list)
         return depot_info
 
 
@@ -61,6 +61,7 @@ def createDepot(args):
     try:
         __service.create_depot(NewDepotID, VariableStore(), replication_number)
     except Exception as e:
+        print e
         response = {
             'result_code': TCDSAPI.ERROR_GENERAL,
             'error_message': e
@@ -114,7 +115,7 @@ def addStorageNodes(args):
             * error_message on failure
     """
     try:
-        depot_info = __service.add_nodes_to_depot(args['depot_id']], args['node_spec_list'])
+        depot_info = __service.add_nodes_to_depot(args['depot_id'], args['node_spec_list'])
     except KeyError, e:
         print e
         response = {

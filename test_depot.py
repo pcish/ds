@@ -58,13 +58,14 @@ if __name__ == '__main__':
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
         print daemon.id, daemon.TYPE
-    """print '--------------'
-    print removeStorageNodes({
+    print '--------------'
+    print service.removeStorageNodes({
         'depot_id': did,
         'node_list': [
             { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6'}
-        ]
+        ],
+        'force': True
     })
-    daemons = depot[did].get_daemon_list()
+    daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.id, daemon.TYPE"""
+        print daemon.id, daemon.TYPE

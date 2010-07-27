@@ -32,8 +32,8 @@ class Depot(object):
         return depot_info
         #TODO get actual usage
 
-    def add_nodes(self, args):
-        for node in args:
+    def add_nodes(self, node_list):
+        for node in node_list:
             if 'node_ip' in node:
                 self.var.resolv[node['node_id']] = node['node_ip']
             for role in node['storage_roles']:
@@ -50,15 +50,21 @@ class Depot(object):
         else:
             self.service_globals.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_replication_factor()))
 
-    def remove_nodes(self, args):
+    def remove_nodes(self, node_list, force=False):
         daemon_list = self.var.get_daemon_list()
+        daemon_count = self._get_daemon_count()
         remove_pending = []
-        for node in args:
+        for node in node_list:
             for daemon in daemon_list:
                 print daemon.get_host_id(), node['node_id']
                 if daemon.get_host_id() == node['node_id']:
                     remove_pending.append(daemon)
-        self.var.remove_daemons(remove_pending)
+                    daemon_count['num_'+daemon.TYPE] = daemon_count['num_'+daemon.TYPE] - 1
+
+        if force or self._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
+            for daemon in remove_pending:
+                daemon.deactivate()
+            self.var.remove_daemons(remove_pending)
 
     def get_state(self):
         return self.var.get_depot_state()

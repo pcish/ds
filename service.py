@@ -24,8 +24,8 @@ class TcdsService(object):
         depot_info = self._depot[depot_id].add_nodes(node_list)
         return depot_info
 
-    def del_nodes_from_depot(self, depot_id, node_list):
-        depot_info = self._depot[depot_id].remove_nodes(node_list)
+    def del_nodes_from_depot(self, depot_id, node_list, force=False):
+        depot_info = self._depot[depot_id].remove_nodes(node_list, force)
         return depot_info
 
     def select_profile(self, profile):
@@ -134,8 +134,10 @@ def removeStorageNodes(args):
     ]
     }
     """
+    if 'force' not in args:
+        args['force'] = False
     try:
-        depot_info = _service.del_nodes_from_depot(args['depot_id'], args['node_list'])
+        depot_info = _service.del_nodes_from_depot(args['depot_id'], args['node_list'], args['force'])
     except KeyError:
         return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
     except Exception as e:

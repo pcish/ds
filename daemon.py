@@ -27,7 +27,7 @@ class Daemon:
     def add_to_config(self, config): assert(0)
 
     def set_config(self, config):
-        self.conf_file_path = config.get('tcloud', 'depot')
+        self.conf_file_path = '%s.conf' % config.get('tcloud', 'depot')
         self.config = config
 
     def setup(self):
@@ -110,7 +110,7 @@ class Mon(Daemon):
         self.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
     def deactivate(self):
-        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_id(self))
+        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_id())
         self.service_globals.run_shell_command(cmd)
 
 

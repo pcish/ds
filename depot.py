@@ -7,13 +7,16 @@ class Depot(object):
         'STATE_OFFLINE': 0,
         'STATE_ONLINE': 1
     }
+    config_file = None
+
     def __init__(self, id, varstore, replication_factor=3, state=None):
         self.var = varstore
         self.var.set_depot_id(id)
-        self.set_replication_factor(replication_factor)
+        self.var.set_replication_factor(replication_factor)
         if state is None:
             state = self.CONSTANTS['STATE_OFFLINE']
         self.set_state(state)
+
     def __del__(self): pass
     def get_info(self):
         depot_info = {
@@ -39,10 +42,10 @@ class Depot(object):
                     self._add_daemon(node['node_id'], Osd(self.var))
 
         daemon_count = self._get_daemon_count()
-        if Depot._get_meets_min_requirements(replication=self.get_replication_factor(), **daemon_count):
+        if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
             self.activate()
         else:
-            print daemon_count, self.get_replication_factor()
+            print daemon_count, self.var.get_replication_factor()
 
     def remove_nodes(self, args):
         daemon_list = self.var.get_daemon_list()
@@ -75,10 +78,12 @@ class Depot(object):
         return daemon_count
 
     def set_replication_factor(self, factor):
-        self.var.set_depot_replication_factor(factor)
+        assert(self.config_file is not None)
+        cmd = "ceph -c %s osd pool set metadata size %d" % (self.config_file, factor)
+        self._run_shell_command(cmd)
 
-    def get_replication_factor(self):
-        return self.var.get_replication_factor()
+        cmd = "ceph -c %s osd pool set data size %d" % (self.config_file, factor)
+        self._run_shell_command(cmd)
 
     @staticmethod
     def _get_meets_min_requirements(replication, num_mon, num_mds, num_osd):
@@ -106,28 +111,18 @@ class Depot(object):
             daemon.add_to_config(config)
             next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
 
-        with open('%s.conf' % self.var.get_depot_id(), 'wb') as config_file:
-            config.write(config_file)
+        with open('%s.conf' % self.var.get_depot_id(), 'wb') as self.config_file:
+            config.write(self.config_file)
         for daemon in daemon_list:
             daemon.set_config(config)
 
-        cmd = "mkcephfs -c %s --allhosts" % (config_file, )
+        cmd = "mkcephfs -c %s --allhosts" % (self.config_file, )
         self._run_shell_command(cmd)
 
-        # start all nodes
         for daemon in daemon_list:
             daemon.activate()
 
-        # set replication factor
-        replication = self.get_replication_factor()
-
-        cmd = "ceph -c %s osd pool set metadata size %d" % (config_file, replication)
-        self._run_shell_command(cmd)
-
-        cmd = "ceph -c %s osd pool set data size %d" % (config_file, replication)
-        self._run_shell_command(cmd)
-
-        # Change Depot Status to live
+        self.set_replication_factor(self.var.get_replication_factor())
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
 
     def deactivate(self): pass

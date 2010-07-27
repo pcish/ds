@@ -9,13 +9,13 @@ class VarStore(object):
     def get_daemon_list(self): assert(0)
     def set_daemon_host(self, daemon, daemon_id): assert(0)
     def get_daemon_host(self, daemon): assert(0)
-    def set_depot_replication_factor(self, factor): assert(0)
+    def set_replication_factor(self, factor): assert(0)
     def get_replication_factor(self): assert(0)
     def host_id_to_ip(self, host_id): assert(0)
     def set_daemon_ceph_id(self, daemon, ceph_id): assert(0)
     def get_daemon_ceph_id(self, daemon): assert(0)
 
-class MultiVarStore(VarStore):
+class MultiVarStore(VarStore, list):
     pass
 
 
@@ -30,7 +30,7 @@ class TcdbVarStore(VarStore):
     def get_daemon_list(self): assert(0)
     def set_daemon_host(self, daemon, daemon_id): assert(0)
     def get_daemon_host(self, daemon): assert(0)
-    def set_depot_replication_factor(self, factor): assert(0)
+    def set_replication_factor(self, factor): assert(0)
     def get_replication_factor(self): assert(0)
     def host_id_to_ip(self, host_id): assert(0)
     def set_daemon_ceph_id(self, daemon, ceph_id): assert(0)
@@ -85,7 +85,7 @@ class LocalVarStore(VarStore):
     def get_daemon_host(self, daemon):
         return self.__daemon_list[daemon].id
 
-    def set_depot_replication_factor(self, factor):
+    def set_replication_factor(self, factor):
         self.__depot_replication_factor = factor
 
     def get_replication_factor(self):

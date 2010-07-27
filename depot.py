@@ -1,17 +1,43 @@
 from tccephconf import TCCephConf
 
 class VarStore(object):
-    def get_depot_id(self): pass
-    def set_depot_id(self, id): pass
-    def get_depot_state(self): pass
-    def set_depot_state(self, state): pass
-    def add_daemon(self, daemon): pass
-    def remove_daemon(self, daemon): pass
-    def remove_daemons(self, daemon_list): pass
-    def get_daemon_list(self): pass
+    def get_depot_id(self): assert(0)
+    def set_depot_id(self, id): assert(0)
+    def get_depot_state(self): assert(0)
+    def set_depot_state(self, state): assert(0)
+    def add_daemon(self, daemon): assert(0)
+    def remove_daemon(self, daemon): assert(0)
+    def remove_daemons(self, daemon_list): assert(0)
+    def get_daemon_list(self): assert(0)
+    def set_daemon_host(self, daemon, daemon_id): assert(0)
+    def get_daemon_host(self, daemon): assert(0)
+    def set_depot_replication_factor(self, factor): assert(0)
+    def get_replication_factor(self): assert(0)
+    def host_id_to_ip(self, host_id): assert(0)
+    def set_daemon_ceph_id(self, daemon, ceph_id): assert(0)
+    def get_daemon_ceph_id(self, daemon): assert(0)
 
 class MultiVarStore(VarStore):
     pass
+
+
+class TcdbVarStore(VarStore):
+    def get_depot_id(self): assert(0)
+    def set_depot_id(self, id): assert(0)
+    def get_depot_state(self): assert(0)
+    def set_depot_state(self, state): assert(0)
+    def add_daemon(self, daemon): assert(0)
+    def remove_daemon(self, daemon): assert(0)
+    def remove_daemons(self, daemon_list): assert(0)
+    def get_daemon_list(self): assert(0)
+    def set_daemon_host(self, daemon, daemon_id): assert(0)
+    def get_daemon_host(self, daemon): assert(0)
+    def set_depot_replication_factor(self, factor): assert(0)
+    def get_replication_factor(self): assert(0)
+    def host_id_to_ip(self, host_id): assert(0)
+    def set_daemon_ceph_id(self, daemon, ceph_id): assert(0)
+    def get_daemon_ceph_id(self, daemon): assert(0)
+
 
 class _LocalVarStoreDaemonList(list):
     def __getitem__(self, key):

@@ -53,7 +53,7 @@ class Depot(object):
                     self._add_daemon(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
 
         daemon_count = self._get_daemon_count()
-        if self.get_state == self.CONSTANTS['STATE_OFFLINE']:
+        if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
             if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
                 self.activate()
             else:
@@ -85,7 +85,6 @@ class Depot(object):
         self.var.add_daemon(daemon)
 
         if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
-            print self.config.has_section('osd.0')
             daemon.add_to_config(self.config)
             daemon.set_config(self.config)
             daemon.setup()

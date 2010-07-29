@@ -77,7 +77,7 @@ class Depot(object):
         self.var.set_daemon_host(daemon, host_id)
         if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
             daemon.setup()
-            if isinstance(daemon, Osd):
+            if daemon.TYPE == 'osd':
                 # set max osd
                 # NB: we assume that the osd id's are monotonically increasing
                 cmd = 'ceph -c %s osd setmaxosd %d' % (self.conf_file_path, daemon.get_ceph_id() + 1)
@@ -89,7 +89,7 @@ class Depot(object):
 
                 cmd = 'ceph osd setcrushmap -i /tmp/crush.new'
                 self.service_globals.run_shell_command(cmd)
-            elif isinstance(daemon, Mon):
+            elif daemon.TYPE == 'mon':
                 # add monitor to the mon map
                 cmd = 'ceph -c %s mon add %s %s:6789' % (self.conf_file_path, self.get_host_id(), self.get_host_ip())
                 self.service_globals.run_shell_command(cmd)

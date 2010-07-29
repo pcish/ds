@@ -91,11 +91,11 @@ class LocalVarStore(VarStore):
                 return_list.append(daemon)
         return return_list
 
-    def set_daemon_host(self, daemon, daemon_id):
-        self.__daemon_list[daemon].id = daemon_id
+    def set_daemon_host(self, daemon, host_uuid):
+        self.__daemon_list[daemon].host = host_uuid
 
     def get_daemon_host(self, daemon):
-        return self.__daemon_list[daemon].id
+        return self.__daemon_list[daemon].host
 
     def set_replication_factor(self, factor):
         self.__depot_replication_factor = factor

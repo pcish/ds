@@ -17,15 +17,15 @@ class TestDepot(unittest.TestCase):
         self.assertRaises(TypeError, Depot._get_meets_min_requirements, 3.5, 3, 2, 3)
         self.assertRaises(TypeError, Depot._get_meets_min_requirements, '3', 3, 2, 3)
 
-class TestAddDaemon(unittest.TestCase):
+class TestAddDaemonToOnlineDepot(unittest.TestCase):
     depot = None
     def setUp(self):
         self.depot = Depot(service_globals=Globals(), id="...", varstore=LocalVarStore())
         self.depot.activate()
 
     def test_add_osd(self):
-        daemon = Osd(self.depot.service_globals, self.depot.var)
-        self.depot._add_daemon(None, daemon)
+        daemon = Osd(self.depot, 'localhost', 0)
+        self.depot._add_daemon(daemon)
 
 
 class Test_check_ceph_ids_are_consequtive(unittest.TestCase):
@@ -35,11 +35,26 @@ class Test_check_ceph_ids_are_consequtive(unittest.TestCase):
         self.depot = Depot(Globals(), None, varstore)
 
     def test_check_ceph_ids_are_consequtive(self):
-        daemon = Osd(self.depot.service_globals, self.depot.var)
-        self.depot._add_daemon(None, daemon)
+        daemon = Osd(self.depot, None, 0)
+        self.depot._add_daemon(daemon)
         self.assertEquals(self.depot._check_ceph_ids_are_consequtive(), True)
         daemon.set_ceph_id(2)
         self.assertEquals(self.depot._check_ceph_ids_are_consequtive(), False)
+
+class Test_get_next_ceph_name_for(unittest.TestCase):
+    depot = None
+    def setUp(self):
+        self.depot = Depot(Globals(), None, LocalVarStore())
+
+    def test_get_next_ceph_name_for(self):
+        self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)
+        self.assertEquals(self.depot._get_next_ceph_name_for('mds'), 0)
+        self.assertEquals(self.depot._get_next_ceph_name_for('osd'), 0)
+        daemon = Osd(self.depot, None, 0)
+        self.depot._add_daemon(daemon)
+        self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)
+        self.assertEquals(self.depot._get_next_ceph_name_for('mds'), 0)
+        self.assertEquals(self.depot._get_next_ceph_name_for('osd'), 1)
 
 if __name__ == '__main__':
     unittest.main()

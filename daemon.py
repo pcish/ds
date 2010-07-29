@@ -2,30 +2,31 @@ import ConfigParser
 import os
 
 class Daemon(object):
-    service_globals = None
-    var = None
+    depot = None
+    host = None
+    ceph_name = None
     DAEMON_NAME = None
     conf_file_path = None
     config = None
     INIT_SCRIPT = '/etc/init.d/ceph'
     TYPE = None
-    ceph_name = None
-    def __init__(self, service_globals, varstore):
-        self.service_globals = service_globals
-        self.var = varstore
-        print "new daemon"
+
+    def __init__(self, depot, host, ceph_name):
+        self.depot = depot
+        self.host = host
+        self.ceph_name = ceph_name
 
     def get_host_id(self):
-        return self.var.get_daemon_host(self)
+        return self.depot.var.get_daemon_host(self)
 
     def get_host_ip(self):
-        return self.var.host_id_to_ip(self.get_host_id())
+        return self.depot.var.host_id_to_ip(self.get_host_id())
 
     def set_ceph_id(self, id):
-        self.var.set_daemon_ceph_id(self, id)
+        self.depot.var.set_daemon_ceph_id(self, id)
 
     def get_ceph_id(self):
-        return self.var.get_daemon_ceph_id(self)
+        return self.depot.var.get_daemon_ceph_id(self)
 
     def add_to_config(self, config): assert(0)
 
@@ -38,14 +39,14 @@ class Daemon(object):
 
     def activate(self):
         cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
     def status(self):
         pass
 
     def deactivate(self):
         cmd = "%s -c %s --hostname %s stop %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
     def clean(self):
         pass
@@ -65,17 +66,17 @@ class Osd(Daemon):
 
     def setup(self):
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd data')),)
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd journal')),)
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
         # get a copy of monmap
         cmd = 'ceph -c %s mon getmap -o /tmp/monmap' % (self.conf_file_path,)
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
         # formatting new osd
         cmd = '"cosd -c %s -i %d --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_id())
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
 
 class Mds(Daemon):
@@ -96,10 +97,10 @@ class Mon(Daemon):
 
     def setup(self):
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)
-        self.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
     def deactivate(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_id())
-        self.service_globals.run_shell_command(cmd)
+        self.depot.service_globals.run_shell_command(cmd)
 
 

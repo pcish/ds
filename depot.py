@@ -45,11 +45,11 @@ class Depot(object):
                 self.var.resolv[node['node_id']] = node['node_ip']
             for role in node['storage_roles']:
                 if role == 'mon':
-                    self._add_daemon(node['node_id'], Mon(self.service_globals, self.var))
+                    self._add_daemon(Mon(self, node['node_id'], self._get_next_ceph_name_for(role)))
                 elif role == 'mds':
-                    self._add_daemon(node['node_id'], Mds(self.service_globals, self.var))
+                    self._add_daemon(Mds(self, node['node_id'], self._get_next_ceph_name_for(role)))
                 elif role == 'osd':
-                    self._add_daemon(node['node_id'], Osd(self.service_globals, self.var))
+                    self._add_daemon(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
 
         daemon_count = self._get_daemon_count()
         if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
@@ -78,10 +78,9 @@ class Depot(object):
     def set_state(self, state):
         self.var.set_depot_state(state)
 
-    def _add_daemon(self, host_id, daemon):
+    def _add_daemon(self, daemon):
         self.var.add_daemon(daemon)
-        self.var.set_daemon_host(daemon, host_id)
-        daemon.set_ceph_id(self._get_next_ceph_name_for(daemon.TYPE))
+
         if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
 
             daemon.add_to_config(self.config)
@@ -156,7 +155,7 @@ class Depot(object):
         for i in range(len(in_use_names)):
             if in_use_names[i] != i:
                 return i
-        return i + 1
+        return len(in_use_names)
 
     def _check_ceph_ids_are_consequtive(self):
         daemon_list = self.get_daemon_list()

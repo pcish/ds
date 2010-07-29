@@ -102,7 +102,7 @@ class Depot(object):
             elif daemon.TYPE == 'osd':
                 # set max osd
                 # NB: we assume that the osd id's are monotonically increasing
-                cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, daemon.get_ceph_id() + 1)
+                cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, self._get_daemon_count['num_osd'])
                 self.service_globals.run_shell_command(cmd)
 
                 # update crush map

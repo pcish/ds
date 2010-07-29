@@ -1,6 +1,7 @@
 import ConfigParser
+import os
 
-class Daemon:
+class Daemon(object):
     service_globals = None
     var = None
     DAEMON_NAME = None
@@ -8,9 +9,11 @@ class Daemon:
     config = None
     INIT_SCRIPT = '/etc/init.d/ceph'
     TYPE = None
+    ceph_name = None
     def __init__(self, service_globals, varstore):
         self.service_globals = service_globals
         self.var = varstore
+        print "new daemon"
 
     def get_host_id(self):
         return self.var.get_daemon_host(self)

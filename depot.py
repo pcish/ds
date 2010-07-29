@@ -1,4 +1,5 @@
 import logging
+
 from tccephconf import TCCephConf
 from daemon import Mon, Mds, Osd
 
@@ -10,6 +11,7 @@ class Depot(object):
         'STATE_ONLINE': 1
     }
     config_file_path = None
+    config = None
 
     def __init__(self, service_globals, id, varstore, replication_factor=3, state=None):
         self.service_globals = service_globals
@@ -19,6 +21,11 @@ class Depot(object):
         if state is None:
             state = self.CONSTANTS['STATE_OFFLINE']
         self.set_state(state)
+        #self.config_file_path = '/etc/ceph/%s.conf' % id
+        self.config_file_path = '%s.conf' % id
+        self.config = TCCephConf()
+        self.config.create_default(self.var.get_depot_id())
+        print "new depot"
 
     def __del__(self): pass
     def get_info(self):
@@ -56,7 +63,6 @@ class Depot(object):
         remove_pending = []
         for node in node_list:
             for daemon in daemon_list:
-                print daemon.get_host_id(), node['node_id']
                 if daemon.get_host_id() == node['node_id']:
                     remove_pending.append(daemon)
                     daemon_count['num_'+daemon.TYPE] = daemon_count['num_'+daemon.TYPE] - 1
@@ -75,23 +81,15 @@ class Depot(object):
     def _add_daemon(self, host_id, daemon):
         self.var.add_daemon(daemon)
         self.var.set_daemon_host(daemon, host_id)
+        daemon.set_ceph_id(self._get_next_ceph_name_for(daemon.TYPE))
         if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
+
+            daemon.add_to_config(self.config)
+            daemon.set_config(self.config)
             daemon.setup()
-            if daemon.TYPE == 'osd':
-                # set max osd
-                # NB: we assume that the osd id's are monotonically increasing
-                cmd = 'ceph -c %s osd setmaxosd %d' % (self.conf_file_path, daemon.get_ceph_id() + 1)
-                self.service_globals.run_shell_command(cmd)
-
-                # update crush map
-                cmd = 'osdmaptool --createsimple %d --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (deamon.get_ceph_id() + 1)
-                self.service_globals.run_shell_command(cmd)
-
-                cmd = 'ceph osd setcrushmap -i /tmp/crush.new'
-                self.service_globals.run_shell_command(cmd)
-            elif daemon.TYPE == 'mon':
+            if daemon.TYPE == 'mon':
                 # add monitor to the mon map
-                cmd = 'ceph -c %s mon add %s %s:6789' % (self.conf_file_path, self.get_host_id(), self.get_host_ip())
+                cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, self.get_host_id(), self.get_host_ip())
                 self.service_globals.run_shell_command(cmd)
                 # copy mon dir from an existing to the new monitor
                 (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
@@ -100,11 +98,24 @@ class Depot(object):
                         self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
                         )
                 self.service_globals.run_shell_command(cmd)
+            elif daemon.TYPE == 'osd':
+                # set max osd
+                # NB: we assume that the osd id's are monotonically increasing
+                cmd = 'ceph -c %s osd setmaxosd %d' % (self.config_file_path, daemon.get_ceph_id() + 1)
+                self.service_globals.run_shell_command(cmd)
+
+                # update crush map
+                cmd = 'osdmaptool --createsimple %d --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (daemon.get_ceph_id() + 1)
+                self.service_globals.run_shell_command(cmd)
+
+                cmd = 'ceph osd setcrushmap -i /tmp/crush.new'
+                self.service_globals.run_shell_command(cmd)
 
             daemon.activate()
 
-    def get_daemon_list(self):
-        return self.var.get_daemon_list()
+
+    def get_daemon_list(self, type='all'):
+        return self.var.get_daemon_list(type)
 
     def _get_daemon_count(self):
         daemon_list = self.get_daemon_list()
@@ -136,22 +147,44 @@ class Depot(object):
         else:
             return False
 
+    def _get_next_ceph_name_for(self, daemon_type):
+        daemon_list = self.get_daemon_list(daemon_type)
+        in_use_names = []
+        for daemon in daemon_list:
+            in_use_names.append(daemon.get_ceph_id())
+        in_use_names.sort()
+        for i in range(len(in_use_names)):
+            if in_use_names[i] != i:
+                return i
+        return i + 1
+
+    def _check_ceph_ids_are_consequtive(self):
+        daemon_list = self.get_daemon_list()
+        daemon_list.sort()
+        next_id = {'mon': 0, 'mds': 0, 'osd': 0}
+        for daemon in daemon_list:
+
+            if next_id[daemon.TYPE] == daemon.get_ceph_id():
+                next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
+            else:
+                return False
+        return True
+
     def activate(self):
-        config = TCCephConf()
-        config.create_default(self.var.get_depot_id())
+
 
         daemon_list = self.get_daemon_list()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
         for daemon in daemon_list:
             daemon.set_ceph_id(next_id[daemon.TYPE])
-            daemon.add_to_config(config)
+            daemon.add_to_config(self.config)
             next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
 
-        self.config_file_path = '%s.conf' % self.var.get_depot_id()
+        assert(self.config_file_path is not None)
         with open(self.config_file_path, 'wb') as config_file:
-            config.write(config_file)
+            self.config.write(config_file)
         for daemon in daemon_list:
-            daemon.set_config(config)
+            daemon.set_config(self.config)
 
         cmd = "mkcephfs -c %s --allhosts" % (self.config_file_path, )
         self.service_globals.run_shell_command(cmd)

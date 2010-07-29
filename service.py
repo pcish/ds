@@ -115,7 +115,7 @@ def addStorageNodes(args):
     try:
         depot_info = _service.add_nodes_to_depot(args['depot_id'], args['node_spec_list'])
     except KeyError, e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot. %s' % e)
     except Exception as e:
         return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:

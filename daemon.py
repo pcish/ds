@@ -29,6 +29,7 @@ class Daemon(object):
         return self.depot.var.get_daemon_ceph_id(self)
 
     def add_to_config(self, config): assert(0)
+    def del_from_config(self, config): assert(0)
 
     def set_config(self, config):
         self.conf_file_path = '%s.conf' % config.get('tcloud', 'depot')
@@ -64,6 +65,9 @@ class Osd(Daemon):
     def add_to_config(self, config):
         config.add_mon(self.get_ceph_id(), self.get_host_ip())
 
+    def del_from_config(self, config):
+        config.del_mon(self.get_ceph_id())
+
     def setup(self):
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd data')),)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
@@ -85,6 +89,8 @@ class Mds(Daemon):
     def add_to_config(self, config):
         config.add_mds(self.get_ceph_id(), self.get_host_ip())
 
+    def del_from_config(self, config):
+        config.del_mds(self.get_ceph_id())
 
 class Mon(Daemon):
     DAEMON_NAME = 'cmon'
@@ -94,6 +100,9 @@ class Mon(Daemon):
 
     def add_to_config(self, config):
         config.add_osd(self.get_ceph_id(), self.get_host_ip())
+
+    def del_from_config(self, config):
+        config.del_osd(self.get_ceph_id())
 
     def setup(self):
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)

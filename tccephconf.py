@@ -73,6 +73,15 @@ class TCCephConf(ConfigParser.RawConfigParser):
         self.add_section(osd_name)
         self.set(osd_name, 'host', '%s' % hostname)
 
+    def del_mon(self, id):
+        self.remove_section('mon.%s' % id)
+
+    def del_mds(self, id):
+        self.remove_section('mds.%s' % id)
+
+    def del_osd(self, id):
+        self.remove_section('osd.%s' % id)
+
     def set_debug_all(self, debug_level):
         self.set('global', 'debug', '%s' % debug_level)
         self.set('osd', 'debug osd', '%s' % debug_level)

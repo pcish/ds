@@ -46,3 +46,14 @@ if __name__ == '__main__':
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
         print daemon.host, daemon.TYPE, daemon.ceph_name
+    print '--------------'
+    print service.addStorageNodes({
+        'depot_id': did,
+        'node_spec_list': [
+            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon' ], 'node_ip': '10.201.193.170'},
+            { 'node_id': 'f0797c41-b21f-4eda-8093-32285453d035', 'storage_roles': [ 'osd' ], 'node_ip': '10.201.193.171'}
+        ]
+    })
+    daemons = service._service._depot[did].get_daemon_list()
+    for daemon in daemons:
+        print daemon.host, daemon.TYPE, daemon.ceph_name

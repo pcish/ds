@@ -1,4 +1,5 @@
 import logging
+import os
 
 from tccephconf import TCCephConf
 from daemon import Mon, Mds, Osd
@@ -52,10 +53,11 @@ class Depot(object):
                     self._add_daemon(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
 
         daemon_count = self._get_daemon_count()
-        if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
-            self.activate()
-        else:
-            self.service_globals.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_replication_factor()))
+        if self.get_state == self.CONSTANTS['STATE_OFFLINE']:
+            if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
+                self.activate()
+            else:
+                self.service_globals.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_replication_factor()))
 
     def remove_nodes(self, node_list, force=False):
         daemon_list = self.var.get_daemon_list()
@@ -70,6 +72,7 @@ class Depot(object):
         if force or self._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
             for daemon in remove_pending:
                 daemon.deactivate()
+                daemon.del_from_config(self.config)
             self.var.remove_daemons(remove_pending)
 
     def get_state(self):
@@ -82,29 +85,29 @@ class Depot(object):
         self.var.add_daemon(daemon)
 
         if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
-
+            print self.config.has_section('osd.0')
             daemon.add_to_config(self.config)
             daemon.set_config(self.config)
             daemon.setup()
             if daemon.TYPE == 'mon':
                 # add monitor to the mon map
-                cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, self.get_host_id(), self.get_host_ip())
+                cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_host_id(), daemon.get_host_ip())
                 self.service_globals.run_shell_command(cmd)
                 # copy mon dir from an existing to the new monitor
                 (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
-                cmd = 'scp -r %s:%s/mon%d %s:%s' %  \
+                cmd = 'scp -r %s:%s/mon%s %s:%s' %  \
                         (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
-                        self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
+                        daemon.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
                         )
                 self.service_globals.run_shell_command(cmd)
             elif daemon.TYPE == 'osd':
                 # set max osd
                 # NB: we assume that the osd id's are monotonically increasing
-                cmd = 'ceph -c %s osd setmaxosd %d' % (self.config_file_path, daemon.get_ceph_id() + 1)
+                cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, daemon.get_ceph_id() + 1)
                 self.service_globals.run_shell_command(cmd)
 
                 # update crush map
-                cmd = 'osdmaptool --createsimple %d --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (daemon.get_ceph_id() + 1)
+                cmd = 'osdmaptool --createsimple %s --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (daemon.get_ceph_id() + 1)
                 self.service_globals.run_shell_command(cmd)
 
                 cmd = 'ceph osd setcrushmap -i /tmp/crush.new'
@@ -125,10 +128,10 @@ class Depot(object):
 
     def set_replication_factor(self, factor):
         assert(self.config_file_path is not None)
-        cmd = "ceph -c %s osd pool set metadata size %d" % (self.config_file_path, factor)
+        cmd = "ceph -c %s osd pool set metadata size %s" % (self.config_file_path, factor)
         self.service_globals.run_shell_command(cmd)
 
-        cmd = "ceph -c %s osd pool set data size %d" % (self.config_file_path, factor)
+        cmd = "ceph -c %s osd pool set data size %s" % (self.config_file_path, factor)
         self.service_globals.run_shell_command(cmd)
 
     @staticmethod

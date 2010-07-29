@@ -97,3 +97,12 @@ class TCCephConf(ConfigParser.RawConfigParser):
                 (active_mon_ip, _, _) = self.get(sections[i], 'addr').partition(':')
                 break
         return (active_mon_ip, '%s' % sections[i][4:])
+
+    def __str__(self):
+        s = ''
+        for section in self.sections():
+            s += '[%s]\n' % section
+            for k, v in self.items(section):
+                s += '%s = %s\n' % (k, v)
+            s += '\n'
+        return s

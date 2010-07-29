@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.id, daemon.TYPE
+        print daemon.host, daemon.TYPE, daemon.ceph_name
     print '--------------'
     print service.removeStorageNodes({
         'depot_id': did,
@@ -45,4 +45,4 @@ if __name__ == '__main__':
     })
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.id, daemon.TYPE
+        print daemon.host, daemon.TYPE, daemon.ceph_name

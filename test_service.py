@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.host, daemon.TYPE, daemon.ceph_name
+        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_id()
     print '--------------'
     print service.removeStorageNodes({
         'depot_id': did,
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     })
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.host, daemon.TYPE, daemon.ceph_name
+        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_id()
     print '--------------'
     service.addStorageNodes({
         'depot_id': did,
@@ -56,5 +56,5 @@ if __name__ == '__main__':
     })
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.host, daemon.TYPE, daemon.ceph_name
+        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_id()
     print service._service._depot[did].config

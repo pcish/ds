@@ -37,32 +37,49 @@ class TestTCCephConf(unittest.TestCase):
         os.remove('test_ceph.conf')
 
 class TestGetMonIpFromConfig(unittest.TestCase):
+    class FakeDaemon:
+        TYPE = 'mon'
+        ceph_name = ''
+        def get_ceph_name(self):
+            return self.ceph_name
 
     def test_single_mon(self):
         config = TCCephConf()
         config.create_default()
         (id, hostname, ip, port) = ('0', '192.168.0.1', None, None)
-        config.add_mon(id, hostname, ip, port)
+        daemon = self.FakeDaemon()
+        daemon.ceph_name = id
+        config.add_mon(daemon, hostname, ip, port)
         self.assertEqual(config.get_active_mon_ip(), (hostname, id))
 
     def test_multiple_mon(self):
         config = TCCephConf()
         config.create_default()
         (id, hostname, ip, port) = ('2', '192.168.0.3', None, None)
-        config.add_mon(id, hostname, ip, port)
+        daemon = self.FakeDaemon()
+        daemon.ceph_name = id
+        config.add_mon(daemon, hostname, ip, port)
         (id, hostname, ip, port) = ('0', '192.168.0.1', None, None)
-        config.add_mon(id, hostname, ip, port)
+        daemon = self.FakeDaemon()
+        daemon.ceph_name = id
+        config.add_mon(daemon, hostname, ip, port)
         (id, hostname, ip, port) = ('1', '192.168.0.2', None, None)
-        config.add_mon(id, hostname, ip, port)
+        daemon = self.FakeDaemon()
+        daemon.ceph_name = id
+        config.add_mon(daemon, hostname, ip, port)
         self.assertEqual(config.get_active_mon_ip(), ('192.168.0.1', '0'))
 
     def test_missing_mon(self):
         config = TCCephConf()
         config.create_default()
         (id, hostname, ip, port) = ('2', '192.168.0.3', None, None)
-        config.add_mon(id, hostname, ip, port)
+        daemon = self.FakeDaemon()
+        daemon.ceph_name = id
+        config.add_mon(daemon, hostname, ip, port)
         (id, hostname, ip, port) = ('1', '192.168.0.2', None, None)
-        config.add_mon(id, hostname, ip, port)
+        daemon = self.FakeDaemon()
+        daemon.ceph_name = id
+        config.add_mon(daemon, hostname, ip, port)
         self.assertEqual(config.get_active_mon_ip(), (hostname, id))
 
 

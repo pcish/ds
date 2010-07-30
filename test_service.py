@@ -57,3 +57,4 @@ if __name__ == '__main__':
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
         print daemon.host, daemon.TYPE, daemon.ceph_name
+    print service._service._depot[did].config

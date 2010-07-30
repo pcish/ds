@@ -29,7 +29,8 @@ class Daemon(object):
         return self.depot.var.get_daemon_ceph_id(self)
 
     def add_to_config(self, config): assert(0)
-    def del_from_config(self, config): assert(0)
+    def del_from_config(self, config):
+        config.del_daemon(self)
 
     def set_config(self, config):
         self.conf_file_path = '%s.conf' % config.get('tcloud', 'depot')
@@ -63,10 +64,7 @@ class Osd(Daemon):
         return '%s -i %d' % (super().getDaemonArgs(), self.get_ceph_id())
 
     def add_to_config(self, config):
-        config.add_mon(self.get_ceph_id(), self.get_host_ip())
-
-    def del_from_config(self, config):
-        config.del_mon(self.get_ceph_id())
+        config.add_osd(self, self.get_host_ip())
 
     def setup(self):
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd data')),)
@@ -87,10 +85,7 @@ class Mds(Daemon):
     DAEMON_NAME = 'cmds'
     TYPE = 'mds'
     def add_to_config(self, config):
-        config.add_mds(self.get_ceph_id(), self.get_host_ip())
-
-    def del_from_config(self, config):
-        config.del_mds(self.get_ceph_id())
+        config.add_mds(self, self.get_host_ip())
 
 class Mon(Daemon):
     DAEMON_NAME = 'cmon'
@@ -99,10 +94,7 @@ class Mon(Daemon):
         return '%s -i %s' % (super().getDaemonArgs(), self.ceph_id)
 
     def add_to_config(self, config):
-        config.add_osd(self.get_ceph_id(), self.get_host_ip())
-
-    def del_from_config(self, config):
-        config.del_osd(self.get_ceph_id())
+        config.add_mon(self, self.get_host_ip())
 
     def setup(self):
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)

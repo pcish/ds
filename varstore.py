@@ -107,7 +107,7 @@ class LocalVarStore(VarStore):
         if host_id in self.resolv:
             return self.resolv[host_id]
         else:
-            return None
+            return ''
 
     def set_daemon_ceph_id(self, daemon, ceph_name):
         self.__daemon_list[daemon].ceph_name = ceph_name

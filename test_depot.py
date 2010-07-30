@@ -28,18 +28,18 @@ class TestAddDaemonToOnlineDepot(unittest.TestCase):
         self.depot._add_daemon(daemon)
 
 
-class Test_check_ceph_ids_are_consequtive(unittest.TestCase):
+class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
     depot = None
     def setUp(self):
         varstore = LocalVarStore()
         self.depot = Depot(Globals(), None, varstore)
 
-    def test_check_ceph_ids_are_consequtive(self):
+    def test_check_ceph_ids_are_consecutive(self):
         daemon = Osd(self.depot, None, 0)
         self.depot._add_daemon(daemon)
-        self.assertEquals(self.depot._check_ceph_ids_are_consequtive(), True)
+        self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), True)
         daemon.set_ceph_id(2)
-        self.assertEquals(self.depot._check_ceph_ids_are_consequtive(), False)
+        self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), False)
 
 class Test_get_next_ceph_name_for(unittest.TestCase):
     depot = None

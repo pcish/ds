@@ -4,6 +4,10 @@ import os
 from tccephconf import TCCephConf
 from daemon import Mon, Mds, Osd
 
+class OsdGroup(list):
+    TYPE = ''
+    seqno = None
+
 class Depot(object):
     service_globals = None
     var = None
@@ -52,8 +56,8 @@ class Depot(object):
                 elif role == 'osd':
                     self._add_daemon(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
 
-        daemon_count = self._get_daemon_count()
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
+            daemon_count = self._get_daemon_count()
             if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
                 self.activate()
             else:
@@ -102,7 +106,6 @@ class Depot(object):
             elif daemon.TYPE == 'osd':
                 num_osd = self._get_daemon_count()['num_osd']
                 # set max osd
-                # NB: we assume that the osd id's are monotonically increasing
                 cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
                 self.service_globals.run_shell_command(cmd)
 
@@ -160,7 +163,7 @@ class Depot(object):
                 return i
         return len(in_use_names)
 
-    def _check_ceph_ids_are_consequtive(self):
+    def _check_ceph_ids_are_consecutive(self):
         daemon_list = self.get_daemon_list()
         daemon_list.sort()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
@@ -173,8 +176,6 @@ class Depot(object):
         return True
 
     def activate(self):
-
-
         daemon_list = self.get_daemon_list()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
         for daemon in daemon_list:

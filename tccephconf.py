@@ -53,34 +53,32 @@ class TCCephConf(ConfigParser.RawConfigParser):
         self.add_section('mount /')
         self.set('mount /', 'allow', '%everyone')
 
-    def add_mon(self, id, hostname, ip=None, port=None):
+    def add_mon(self, daemon, hostname, ip=None, port=None):
         if ip is None:
             ip = hostname
         if port is None:
             port = 6789
-        mon_name = 'mon.%s' % id
-        self.add_section(mon_name)
-        self.set(mon_name, 'host', '%s' % hostname)
-        self.set(mon_name, 'addr', '%s:%s' % (ip, port))
+        section_name = self._get_section(daemon)
+        self.add_section(section_name)
+        self.set(section_name, 'host', '%s' % hostname)
+        self.set(section_name, 'addr', '%s:%s' % (ip, port))
 
-    def add_mds(self, id, hostname):
-        mds_name = 'mds.%s' % id
-        self.add_section(mds_name)
-        self.set(mds_name, 'host', '%s' % hostname)
+    def add_mds(self, daemon, hostname):
+        section_name = self._get_section(daemon)
+        self.add_section(section_name)
+        self.set(section_name, 'host', '%s' % hostname)
 
-    def add_osd(self, id, hostname):
-        osd_name = 'osd.%s' % id
-        self.add_section(osd_name)
-        self.set(osd_name, 'host', '%s' % hostname)
+    def add_osd(self, daemon, hostname):
+        section_name = self._get_section(daemon)
+        self.add_section(section_name)
+        self.set(section_name, 'host', '%s' % hostname)
 
-    def del_mon(self, id):
-        self.remove_section('mon.%s' % id)
+    def del_daemon(self, daemon):
+        self.remove_section(self._get_section(daemon))
 
-    def del_mds(self, id):
-        self.remove_section('mds.%s' % id)
-
-    def del_osd(self, id):
-        self.remove_section('osd.%s' % id)
+    def _get_section(self, daemon):
+        section_str = '%s.%s' % (daemon.TYPE, daemon.get_ceph_id())
+        return section_str
 
     def set_debug_all(self, debug_level):
         self.set('global', 'debug', '%s' % debug_level)

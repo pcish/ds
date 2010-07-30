@@ -2,13 +2,21 @@ import inspect
 
 class VarStore(object):
     def __init__(self): print "new varstore"
-    def get_depot_id(self):
+    def add_depot(self, depot):
         self._virtual_function()
-    def set_depot_id(self, id):
+    def del_depot(self, depot):
         self._virtual_function()
-    def get_depot_state(self):
+    def set_depot_id(self, depot, depot_uuid):
         self._virtual_function()
-    def set_depot_state(self, state):
+    def get_depot_id(self, depot):
+        self._virtual_function()
+    def set_depot_state(self, depot, state):
+        self._virtual_function()
+    def get_depot_state(self, depot):
+        self._virtual_function()
+    def set_depot_replication_factor(self, depot, factor):
+        self._virtual_function()
+    def get_depot_replication_factor(self, depot):
         self._virtual_function()
     def add_daemon(self, daemon):
         self._virtual_function()
@@ -16,21 +24,21 @@ class VarStore(object):
         self._virtual_function()
     def remove_daemons(self, daemon_list):
         self._virtual_function()
-    def get_daemon_list(self, type):
+    def get_depot_daemon_list(self, depot, type='all'):
         self._virtual_function()
-    def set_daemon_host(self, daemon, daemon_id):
+    def set_daemon_uuid(self, daemon, uuid):
+        self._virtual_function()
+    def get_daemon_uuid(self, daemon):
+        self._virtual_function()
+    def set_daemon_host(self, daemon, host_uuid):
         self._virtual_function()
     def get_daemon_host(self, daemon):
         self._virtual_function()
-    def set_replication_factor(self, factor):
-        self._virtual_function()
-    def get_replication_factor(self):
-        self._virtual_function()
     def host_id_to_ip(self, host_id):
         self._virtual_function()
-    def set_daemon_ceph_id(self, daemon, ceph_id):
+    def set_daemon_ceph_name(self, daemon, ceph_name):
         self._virtual_function()
-    def get_daemon_ceph_id(self, daemon):
+    def get_daemon_ceph_name(self, daemon):
         self._virtual_function()
     def _virtual_function(self):
         assert 0, 'virtual function %s called' % inspect.stack()[1][3]

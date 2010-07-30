@@ -27,13 +27,13 @@ class Daemon(object):
     def get_host_ip(self):
         return self.depot.var.host_id_to_ip(self.get_host_id())
 
-    def set_ceph_id(self, id):
-        self.depot.var.set_daemon_ceph_id(self, id)
+    def set_ceph_name(self, name):
+        self.depot.var.set_daemon_ceph_name(self, name)
 
-    def get_ceph_id(self):
-        return self.depot.var.get_daemon_ceph_id(self)
+    def get_ceph_name(self):
+        return self.depot.var.get_daemon_ceph_name(self)
 
-    def add_to_config(self, config): assert(0)
+    def add_to_config(self, config): assert 0, 'virtual function called'
     def del_from_config(self, config):
         config.del_daemon(self)
 
@@ -66,7 +66,7 @@ class Osd(Daemon):
     DAEMON_NAME = 'cosd'
     TYPE = 'osd'
     def getDaemonArgs(self):
-        return '%s -i %d' % (super().getDaemonArgs(), self.get_ceph_id())
+        return '%s -i %d' % (super().getDaemonArgs(), self.get_ceph_name())
 
     def add_to_config(self, config):
         config.add_osd(self, self.get_host_ip())
@@ -82,7 +82,7 @@ class Osd(Daemon):
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
         # formatting new osd
-        cmd = '"cosd -c %s -i %d --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_id())
+        cmd = '"cosd -c %s -i %d --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_name())
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
 
@@ -96,7 +96,7 @@ class Mon(Daemon):
     DAEMON_NAME = 'cmon'
     TYPE = 'mon'
     def getDaemonArgs(self):
-        return '%s -i %s' % (super().getDaemonArgs(), self.ceph_id)
+        return '%s -i %s' % (super().getDaemonArgs(), self.get_ceph_name())
 
     def add_to_config(self, config):
         config.add_mon(self, self.get_host_ip())
@@ -114,7 +114,7 @@ class Mon(Daemon):
         self.depot.service_globals.run_shell_command(cmd)
 
     def deactivate(self):
-        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_id())
+        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_name())
         self.depot.service_globals.run_shell_command(cmd)
 
 

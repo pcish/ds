@@ -3,7 +3,7 @@ import service
 if __name__ == '__main__':
     try:
         res = service.createDepot({'replication_number': 2,})
-        print res['depot_id']
+        print res
         did = res['depot_id']
     except Exception as e:
         #print res['error_message']
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_id()
+        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
     print '--------------'
     print service.removeStorageNodes({
         'depot_id': did,
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     })
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_id()
+        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
     print '--------------'
     service.addStorageNodes({
         'depot_id': did,
@@ -56,5 +56,5 @@ if __name__ == '__main__':
     })
     daemons = service._service._depot[did].get_daemon_list()
     for daemon in daemons:
-        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_id()
+        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
     print service._service._depot[did].config

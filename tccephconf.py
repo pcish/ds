@@ -77,7 +77,7 @@ class TCCephConf(ConfigParser.RawConfigParser):
         self.remove_section(self._get_section(daemon))
 
     def _get_section(self, daemon):
-        section_str = '%s.%s' % (daemon.TYPE, daemon.get_ceph_id())
+        section_str = '%s.%s' % (daemon.TYPE, daemon.get_ceph_name())
         return section_str
 
     def set_debug_all(self, debug_level):

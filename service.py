@@ -8,11 +8,15 @@ class TcdsService(object):
     _depot = {}
     service_globals = None
     def __init__(self, service_globals, varstore):
+        self._depot = {}
         self.service_globals = service_globals
         self.var = varstore
 
     def create_depot(self, depot_id, replication_factor):
-        self._depot[depot_id] = Depot(self, depot_id, replication_factor)
+        depot = Depot(self)
+        self.var.add_depot(depot)
+        depot.setup(depot_id, replication_factor)
+        self._depot[depot_id] = depot
 
     def remove_depot(self, depot_id):
         pass

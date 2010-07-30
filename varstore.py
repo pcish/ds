@@ -92,10 +92,10 @@ class LocalVarStore(VarStore):
         return return_list
 
     def set_daemon_host(self, daemon, host_uuid):
-        self.__daemon_list[daemon].host = host_uuid
+        self.__daemon_list[daemon]._localvars['host'] = host_uuid
 
     def get_daemon_host(self, daemon):
-        return self.__daemon_list[daemon].host
+        return self.__daemon_list[daemon]._localvars['host']
 
     def set_replication_factor(self, factor):
         self.__depot_replication_factor = factor
@@ -110,10 +110,10 @@ class LocalVarStore(VarStore):
             return ''
 
     def set_daemon_ceph_id(self, daemon, ceph_name):
-        self.__daemon_list[daemon].ceph_name = ceph_name
+        self.__daemon_list[daemon]._localvars['ceph_name'] = ceph_name
 
     def get_daemon_ceph_id(self, daemon):
-        return self.__daemon_list[daemon].ceph_name
+        return self.__daemon_list[daemon]._localvars['ceph_name']
 
 
 

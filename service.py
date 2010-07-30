@@ -7,11 +7,12 @@ from serviceglobals import LocalDebugServiceGlobals as Globals
 class TcdsService(object):
     _depot = {}
     service_globals = None
-    def __init__(self, service_globals):
+    def __init__(self, service_globals, varstore):
         self.service_globals = service_globals
+        self.var = varstore
 
-    def create_depot(self, depot_id, varstore, replication_factor):
-        self._depot[depot_id] = Depot(self.service_globals, depot_id, varstore, replication_factor)
+    def create_depot(self, depot_id, replication_factor):
+        self._depot[depot_id] = Depot(self, depot_id, replication_factor)
 
     def remove_depot(self, depot_id):
         pass
@@ -44,7 +45,7 @@ The API functions are basically wrappers for their companion functions in
 TcdsService. An instance of the TcdsService class is maintained for the
 functions to call.
 """
-_service = TcdsService(Globals())
+_service = TcdsService(Globals(), VariableStore())
 
 class TcdsApiErrorResponse(dict):
     def __init__(self, code, message):
@@ -75,7 +76,7 @@ def createDepot(args):
         replication_number = 3  # default replication number
 
     try:
-        _service.create_depot(NewDepotID, VariableStore(), replication_number)
+        _service.create_depot(NewDepotID, replication_number)
     except Exception as e:
         return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:

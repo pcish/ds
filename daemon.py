@@ -2,6 +2,7 @@ import ConfigParser
 import os
 
 class Daemon(object):
+    _localvars = None
     depot = None
     host = None
     ceph_name = None
@@ -11,10 +12,9 @@ class Daemon(object):
     INIT_SCRIPT = '/etc/init.d/ceph'
     TYPE = None
 
-    def __init__(self, depot, host, ceph_name):
+    def __init__(self, depot):
         self.depot = depot
-        self.host = host
-        self.ceph_name = ceph_name
+        self._localvars = {} # TODO: check that we need to init this
 
     def get_host_id(self):
         return self.depot.var.get_daemon_host(self)

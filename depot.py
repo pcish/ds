@@ -10,6 +10,8 @@ class OsdGroup(list):
     seqno = None
 
 class Depot(object):
+    _localvars = None
+    service = None
     service_globals = None
     var = None
     CONSTANTS = {
@@ -19,9 +21,11 @@ class Depot(object):
     config_file_path = None
     config = None
 
-    def __init__(self, service_globals, id, varstore, replication_factor=3, state=None):
-        self.service_globals = service_globals
-        self.var = varstore
+    def __init__(self, service, id, replication_factor=3, state=None):
+        self.service = service
+        self.service_globals = service.service_globals
+        self.var = service.var
+        self._localvars = {} # TODO: check that we need to init this
         self.var.set_depot_id(id)
         self.var.set_replication_factor(replication_factor)
         if state is None:
@@ -49,21 +53,24 @@ class Depot(object):
         new_mons = []
         orig_num_osd = self._get_daemon_count()['num_osd']
         # create daemon instances
-        new_daemons = []
+        new_daemon_list = []
         for node in node_list:
             for role in node['storage_roles']:
                 if role == 'mon':
-                    new_mons.append(Mon(self, node['node_id'], self._get_next_ceph_name_for(role)))
+                    new_daemon = Mon(self)
+                    new_mons.append(new_daemon)
                 elif role == 'mds':
-                    new_daemons.append(Mds(self, node['node_id'], self._get_next_ceph_name_for(role)))
+                    new_daemon = Mds(self)
                 elif role == 'osd':
-                    new_daemons.append(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
-        new_daemons.extend(new_mons)
+                    new_daemon = Osd(self)
+                else:
+                    raise ValueError('storage_roles should be one of mon, mds, osd')
+                new_daemon_list.append(new_daemon)
+                new_ceph_name = self._get_next_ceph_name_for(role)
+                self.var.add_daemon(new_daemon)
+                self.var.set_daemon_host(new_daemon, node['node_id'])
+                new_daemon.set_ceph_id(new_ceph_name)
 
-        for daemon in new_daemons:
-            self.var.add_daemon(daemon)
-
-        print "state:", self.get_state()
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
             daemon_count = self._get_daemon_count()
             if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
@@ -73,12 +80,12 @@ class Depot(object):
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
             old_config = copy.deepcopy(self.config)
             old_config_str = '%s' % old_config
-            for daemon in new_daemons:
+            for daemon in new_daemon_list:
                 daemon.set_config(old_config)
                 daemon.setup()
-            for daemon in new_daemons:
+            for daemon in new_daemon_list:
                 daemon.add_to_config(self.config)
-            for daemon in new_daemons:
+            for daemon in new_daemon_list:
                 daemon.set_config(self.config)
 
             if len(new_mons) > 0:
@@ -98,7 +105,7 @@ class Depot(object):
                 cmd = 'ceph osd setcrushmap -i %s' % new_crushmap
                 self.service_globals.run_shell_command(cmd)
 
-            for daemon in new_daemons:
+            for daemon in new_daemon_list:
                 daemon.activate()
 
     def _generate_crushmap(self):
@@ -186,6 +193,7 @@ class Depot(object):
         return True
 
     def activate(self):
+        if self.get_state() != self.CONSTANTS['STATE_OFFLINE']: return False
         daemon_list = self.get_daemon_list()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
         for daemon in daemon_list:
@@ -207,6 +215,7 @@ class Depot(object):
 
         self.set_replication_factor(self.var.get_replication_factor())
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
+        return True
 
     def deactivate(self): pass
 

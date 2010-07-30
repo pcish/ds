@@ -22,44 +22,45 @@ class TestDepot(unittest.TestCase):
 class TestAddDaemonToOnlineDepot(unittest.TestCase):
     depot = None
     def setUp(self):
-        service = TcdsService(LocalVarStore(), Globals())
-        self.depot = Depot(service, None)
+        service = TcdsService(Globals(), LocalVarStore())
+        self.depot = Depot(service, 'test_depot')
         self.depot.activate()
 
     def test_add_osd(self):
-        node_list = [{'node_id': str(uuid.uuid4()), 'storage_roles': ['osd']}]
-        self.depot.add_nodes(node_list)
-
+        node_uuid = str(uuid.uuid4())
+        node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
+        self.depot.add_daemons(node_list)
 
 class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
     depot = None
     def setUp(self):
-        service = TcdsService(LocalVarStore(), Globals())
+        service = TcdsService(Globals(), LocalVarStore())
         self.depot = Depot(service, None)
 
     def test_check_ceph_ids_are_consecutive(self):
         node_uuid = str(uuid.uuid4())
-        node_list = [{'node_id': node_uuid, 'storage_roles': ['osd']}]
-        self.depot.add_nodes(node_list)
+        node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
+        self.depot.add_daemons(node_list)
         self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), True)
         daemon_list = self.depot.get_daemon_list()
         for daemon in daemon_list:
-            if daemon.get_
-        daemon.set_ceph_id(2)
+            if daemon.get_uuid() == node_uuid:
+                daemon.set_ceph_id(2)
         self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), False)
 
 class Test_get_next_ceph_name_for(unittest.TestCase):
     depot = None
     def setUp(self):
-        service = TcdsService(LocalVarStore(), Globals())
+        service = TcdsService(Globals(), LocalVarStore())
         self.depot = Depot(service, None)
 
     def test_get_next_ceph_name_for(self):
         self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)
         self.assertEquals(self.depot._get_next_ceph_name_for('mds'), 0)
         self.assertEquals(self.depot._get_next_ceph_name_for('osd'), 0)
-        node_list = [{'node_id': str(uuid.uuid4()), 'storage_roles': ['osd']}]
-        self.depot.add_nodes(node_list)
+        node_uuid = str(uuid.uuid4())
+        node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
+        self.depot.add_daemons(node_list)
         self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)
         self.assertEquals(self.depot._get_next_ceph_name_for('mds'), 0)
         self.assertEquals(self.depot._get_next_ceph_name_for('osd'), 1)

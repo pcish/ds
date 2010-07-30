@@ -21,8 +21,8 @@ class TcdsService(object):
         depot_info = self._depot[depot_id].get_info()
         return depot_info
 
-    def add_nodes_to_depot(self, depot_id, node_list):
-        depot_info = self._depot[depot_id].add_nodes(node_list)
+    def add_daemons_to_depot(self, depot_id, daemon_spec_list):
+        depot_info = self._depot[depot_id].add_daemons(daemon_spec_list)
         return depot_info
 
     def del_nodes_from_depot(self, depot_id, node_list, force=False):
@@ -114,7 +114,11 @@ def addStorageNodes(args):
             * error_message on failure
     """
     try:
-        depot_info = _service.add_nodes_to_depot(args['depot_id'], args['node_spec_list'])
+        daemon_spec_list = []
+        for node in args['node_spec_list']:
+            for role in node['storage_roles']:
+                daemon_spec_list.append({'type': role, 'host': node['node_id'], 'uuid': str(uuid.uuid4())})
+        depot_info = _service.add_daemons_to_depot(args['depot_id'], daemon_spec_list)
     except KeyError, e:
         return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot. %s' % e)
     except Exception as e:

@@ -4,8 +4,7 @@ import os
 class Daemon(object):
     _localvars = None
     depot = None
-    host = None
-    ceph_name = None
+
     DAEMON_NAME = None
     conf_file_path = None
     config = None
@@ -15,6 +14,12 @@ class Daemon(object):
     def __init__(self, depot):
         self.depot = depot
         self._localvars = {} # TODO: check that we need to init this
+
+    def set_uuid(self, uuid):
+        self.depot.var.set_daemon_uuid(self, uuid)
+
+    def get_uuid(self):
+        return self.depot.var.get_daemon_uuid(self)
 
     def get_host_id(self):
         return self.depot.var.get_daemon_host(self)

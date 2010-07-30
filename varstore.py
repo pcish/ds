@@ -91,6 +91,12 @@ class LocalVarStore(VarStore):
                 return_list.append(daemon)
         return return_list
 
+    def set_daemon_uuid(self, daemon, uuid):
+        self.__daemon_list[daemon]._localvars['uuid'] = uuid
+
+    def get_daemon_uuid(self, daemon):
+        return self.__daemon_list[daemon]._localvars['uuid']
+
     def set_daemon_host(self, daemon, host_uuid):
         self.__daemon_list[daemon]._localvars['host'] = host_uuid
 

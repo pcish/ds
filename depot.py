@@ -49,27 +49,27 @@ class Depot(object):
         return depot_info
         #TODO get actual usage
 
-    def add_nodes(self, node_list):
+    def add_daemons(self, daemon_spec_list):
         new_mons = []
         orig_num_osd = self._get_daemon_count()['num_osd']
         # create daemon instances
         new_daemon_list = []
-        for node in node_list:
-            for role in node['storage_roles']:
-                if role == 'mon':
-                    new_daemon = Mon(self)
-                    new_mons.append(new_daemon)
-                elif role == 'mds':
-                    new_daemon = Mds(self)
-                elif role == 'osd':
-                    new_daemon = Osd(self)
-                else:
-                    raise ValueError('storage_roles should be one of mon, mds, osd')
-                new_daemon_list.append(new_daemon)
-                new_ceph_name = self._get_next_ceph_name_for(role)
-                self.var.add_daemon(new_daemon)
-                self.var.set_daemon_host(new_daemon, node['node_id'])
-                new_daemon.set_ceph_id(new_ceph_name)
+        for daemon_spec in daemon_spec_list:
+            if daemon_spec['type'] == 'mon':
+                new_daemon = Mon(self)
+                new_mons.append(new_daemon)
+            elif daemon_spec['type'] == 'mds':
+                new_daemon = Mds(self)
+            elif daemon_spec['type'] == 'osd':
+                new_daemon = Osd(self)
+            else:
+                raise ValueError('storage_roles should be one of mon, mds, osd')
+            new_daemon_list.append(new_daemon)
+            new_ceph_name = self._get_next_ceph_name_for(daemon_spec['type'])
+            self.var.add_daemon(new_daemon)
+            self.var.set_daemon_uuid(new_daemon, daemon_spec['uuid'])
+            self.var.set_daemon_host(new_daemon, daemon_spec['host'])
+            new_daemon.set_ceph_id(new_ceph_name)
 
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
             daemon_count = self._get_daemon_count()

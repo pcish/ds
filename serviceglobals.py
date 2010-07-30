@@ -20,6 +20,27 @@ class LocalDebugServiceGlobals(ServiceGlobals):
     def run_remote_command(self, remote_host, command):
         print 'ssh %s %s' % (remote_host, command)
 
+class LocalUnittestServiceGlobals(ServiceGlobals):
+    shell_commands = None
+
+    def __init__(self):
+        self.shell_commands = []
+
+    def dout(self, level, message):
+        pass
+
+    def error_code(self, errorno):
+        return errorno
+
+    def run_shell_command(self, command):
+        self.shell_commands.append(command)
+
+    def run_remote_command(self, remote_host, command):
+        self.shell_commands.append('ssh %s %s' % (remote_host, command))
+
+    def clear_shell_commands(self):
+        self.shell_commands = []
+
 class TcServiceGlobals(ServiceGlobals):
     logger = None
     def __init__(self): pass

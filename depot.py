@@ -91,13 +91,14 @@ class Depot(object):
             if len(new_mons) > 0:
                 for daemon in new_mons:
                     # add monitor to the mon map
-                    cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_host_id(), daemon.get_host_ip())
+                    cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_id(), daemon.get_host_ip())
                     self.service_globals.run_shell_command(cmd)
 
             num_osd = self._get_daemon_count()['num_osd']
             if num_osd > orig_num_osd:
                 # set max osd
                 cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
+
                 self.service_globals.run_shell_command(cmd)
 
                 # update crush map

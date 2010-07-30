@@ -4,7 +4,7 @@ from depot import Depot
 from service import TcdsService
 from daemon import Mon, Mds, Osd
 from varstore import LocalVarStore
-from serviceglobals import LocalDebugServiceGlobals as Globals
+from serviceglobals import LocalUnittestServiceGlobals as Globals
 
 class TestDepot(unittest.TestCase):
     def test_min_req_check(self):
@@ -21,15 +21,32 @@ class TestDepot(unittest.TestCase):
 
 class TestAddDaemonToOnlineDepot(unittest.TestCase):
     depot = None
+    service = None
     def setUp(self):
-        service = TcdsService(Globals(), LocalVarStore())
-        self.depot = Depot(service, 'test_depot')
+        self.service = TcdsService(Globals(), LocalVarStore())
+        self.depot = Depot(self.service, 'test_depot')
+        host = str(uuid.uuid4())
+        node_list = [{'uuid': str(uuid.uuid4()), 'type': 'mon', 'host': host}]
+        self.depot.add_daemons(node_list)
         self.depot.activate()
 
     def test_add_osd(self):
-        node_uuid = str(uuid.uuid4())
-        node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
+        self.service.service_globals.clear_shell_commands()
+        node_list = [{'uuid': str(uuid.uuid4()), 'type': 'osd', 'host': str(uuid.uuid4())}]
         self.depot.add_daemons(node_list)
+        self.assertTrue('ssh  /etc/init.d/ceph -c test_depot.conf --hostname  start osd' in self.service.service_globals.shell_commands)
+
+    def test_add_mon(self):
+        self.service.service_globals.clear_shell_commands()
+        node_list = [{'uuid': str(uuid.uuid4()), 'type': 'mon', 'host': str(uuid.uuid4())}]
+        self.depot.add_daemons(node_list)
+        self.assertTrue('ssh  /etc/init.d/ceph -c test_depot.conf --hostname  start mon' in self.service.service_globals.shell_commands)
+
+    def test_add_mds(self):
+        self.service.service_globals.clear_shell_commands()
+        node_list = [{'uuid': str(uuid.uuid4()), 'type': 'mds', 'host': str(uuid.uuid4())}]
+        self.depot.add_daemons(node_list)
+        self.assertTrue('ssh  /etc/init.d/ceph -c test_depot.conf --hostname  start mds' in self.service.service_globals.shell_commands)
 
 class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
     depot = None

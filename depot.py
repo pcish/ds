@@ -1,5 +1,6 @@
 import logging
 import os
+import copy
 
 from tccephconf import TCCephConf
 from daemon import Mon, Mds, Osd
@@ -45,23 +46,66 @@ class Depot(object):
         #TODO get actual usage
 
     def add_nodes(self, node_list):
+        new_mons = []
+        orig_num_osd = self._get_daemon_count()['num_osd']
+        # create daemon instances
+        new_daemons = []
         for node in node_list:
-            if 'node_ip' in node:
-                self.var.resolv[node['node_id']] = node['node_ip']
             for role in node['storage_roles']:
                 if role == 'mon':
-                    self._add_daemon(Mon(self, node['node_id'], self._get_next_ceph_name_for(role)))
+                    new_mons.append(Mon(self, node['node_id'], self._get_next_ceph_name_for(role)))
                 elif role == 'mds':
-                    self._add_daemon(Mds(self, node['node_id'], self._get_next_ceph_name_for(role)))
+                    new_daemons.append(Mds(self, node['node_id'], self._get_next_ceph_name_for(role)))
                 elif role == 'osd':
-                    self._add_daemon(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
+                    new_daemons.append(Osd(self, node['node_id'], self._get_next_ceph_name_for(role)))
+        new_daemons.extend(new_mons)
 
+        for daemon in new_daemons:
+            self.var.add_daemon(daemon)
+
+        print "state:", self.get_state()
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
             daemon_count = self._get_daemon_count()
             if Depot._get_meets_min_requirements(replication=self.var.get_replication_factor(), **daemon_count):
                 self.activate()
             else:
                 self.service_globals.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_replication_factor()))
+        elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
+            old_config = copy.deepcopy(self.config)
+            old_config_str = '%s' % old_config
+            for daemon in new_daemons:
+                daemon.set_config(old_config)
+                daemon.setup()
+            for daemon in new_daemons:
+                daemon.add_to_config(self.config)
+            for daemon in new_daemons:
+                daemon.set_config(self.config)
+
+            if len(new_mons) > 0:
+                for daemon in new_mons:
+                    # add monitor to the mon map
+                    cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_host_id(), daemon.get_host_ip())
+                    self.service_globals.run_shell_command(cmd)
+
+            num_osd = self._get_daemon_count()['num_osd']
+            if num_osd > orig_num_osd:
+                # set max osd
+                cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
+                self.service_globals.run_shell_command(cmd)
+
+                # update crush map
+                new_crushmap = self._generate_crushmap()
+                cmd = 'ceph osd setcrushmap -i %s' % new_crushmap
+                self.service_globals.run_shell_command(cmd)
+
+            for daemon in new_daemons:
+                daemon.activate()
+
+    def _generate_crushmap(self):
+        num_osd = self._get_daemon_count()['num_osd']
+        cmd = 'osdmaptool --createsimple %s --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (num_osd,)
+        self.service_globals.run_shell_command(cmd)
+        return '/tmp/crush.new'
 
     def remove_nodes(self, node_list, force=False):
         daemon_list = self.var.get_daemon_list()
@@ -84,40 +128,6 @@ class Depot(object):
 
     def set_state(self, state):
         self.var.set_depot_state(state)
-
-    def _add_daemon(self, daemon):
-        self.var.add_daemon(daemon)
-
-        if self.get_state() == self.CONSTANTS['STATE_ONLINE']:
-            daemon.add_to_config(self.config)
-            daemon.set_config(self.config)
-            daemon.setup()
-            if daemon.TYPE == 'mon':
-                # add monitor to the mon map
-                cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_host_id(), daemon.get_host_ip())
-                self.service_globals.run_shell_command(cmd)
-                # copy mon dir from an existing to the new monitor
-                (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
-                cmd = 'scp -r %s:%s/mon%s %s:%s' %  \
-                        (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
-                        daemon.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
-                        )
-                self.service_globals.run_shell_command(cmd)
-            elif daemon.TYPE == 'osd':
-                num_osd = self._get_daemon_count()['num_osd']
-                # set max osd
-                cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
-                self.service_globals.run_shell_command(cmd)
-
-                # update crush map
-                cmd = 'osdmaptool --createsimple %s --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (num_osd,)
-                self.service_globals.run_shell_command(cmd)
-
-                cmd = 'ceph osd setcrushmap -i /tmp/crush.new'
-                self.service_globals.run_shell_command(cmd)
-
-            daemon.activate()
-
 
     def get_daemon_list(self, type='all'):
         return self.var.get_daemon_list(type)

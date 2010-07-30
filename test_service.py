@@ -21,7 +21,7 @@ if __name__ == '__main__':
     else:
         print info
 
-    service.addStorageNodes({
+    print service.addStorageNodes({
         'depot_id': did,
         'node_spec_list': [
             { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon', 'osd' ], 'node_ip': '10.201.193.170'},

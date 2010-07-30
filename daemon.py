@@ -100,6 +100,14 @@ class Mon(Daemon):
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
+        # copy mon dir from an existing to the new monitor
+        (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
+        cmd = 'scp -r %s:%s/mon%s %s:%s' %  \
+                (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
+                self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
+                )
+        self.depot.service_globals.run_shell_command(cmd)
+
     def deactivate(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_id())
         self.depot.service_globals.run_shell_command(cmd)

@@ -50,7 +50,7 @@ class CephConfVarStore(VarStore):
     pass
 
 class TcdbVarStore(VarStore):
-    con = None
+    conn = None
     def __init__(self):
         exec 'import psycopg2'
         exec 'import tcloud.util.globalconfig as globalconfig'
@@ -67,65 +67,122 @@ class TcdbVarStore(VarStore):
             if value:
                 conn_string.append('='.join(key, option))
         conn_string.append('='.join('port', '5432'))
-        self.con = psycopg2.connect(' '.join(conn_string))
+        self.conn = psycopg2.connect(' '.join(conn_string))
 
     def add_depot(self, depot, uuid, replication, state):
-        c = self.con.cursor()
-        c.execute('insert into "TCDS_DEPOT" values (%s, %s, %s)',
+        cur = self.conn.cursor()
+        cur.execute('insert into "TCDS_DEPOT" values (%s, %s, %s)',
             (uuid, replication, state))
-        conn.commit()
-        c.close()
+        self.conn.commit()
+        cur.close()
+
     def del_depot(self, depot):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('delete from "TCDS_DEPOT" where "ID"=%s', (self.get_depot_id(depot),))
+        self.conn.commit()
+        cur.close()
+
     def set_depot_id(self, depot, depot_uuid):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('update "TCDS_DEPOT" set "ID"=%s where "ID"=%s',
+            (depot_uuid, self.get_depot_id(depot)))
+        self.conn.commit()
+        cur.close()
+
     def get_depot_id(self, depot):
         self._virtual_function()
+
     def set_depot_state(self, depot, state):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('update "TCDS_DEPOT" set "STATE"=%s where "ID"=%s',
+            (state, self.get_depot_id(depot)))
+        self.conn.commit()
+        cur.close()
+
     def get_depot_state(self, depot):
-        c = self.con.cursor()
-        c.execute('select "STATE" from "TCDS_DEPOT" where "ID"=%s', (self.get_depot_id(depot),))
-        return c.fetchone()
+        cur = self.conn.cursor()
+        cur.execute('select "STATE" from "TCDS_DEPOT" where "ID"=%s', (self.get_depot_id(depot),))
+        row = cur.fetchone()
+        cur.close()
+        return row
 
     def set_depot_replication_factor(self, depot, factor):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('update "TCDS_DEPOT" set "REPLICATION"=%s where "ID"=%s',
+            (factor, self.get_depot_id(depot)))
+        conn.commit()
+        cur.close()
+
     def get_depot_replication_factor(self, depot):
-        c = self.con.cursor()
-        c.execute('select "REPLICATION" from "TCDS_DEPOT" where "ID"=%s',
+        cur = self.conn.cursor()
+        cur.execute('select "REPLICATION" from "TCDS_DEPOT" where "ID"=%s',
             (self.get_depot_id(depot),))
-        return c.fetchone()
+        row = cur.fetchone()
+        cur.close()
+        return row
 
     def add_daemon(self, daemon, uuid, host, ceph_name):
-        c = self.con.cursor()
-        c.execute('insert into "TCDS_NODE" values (%s, %s, %s, %s, %s)',
+        cur = self.conn.cursor()
+        cur.execute('insert into "TCDS_NODE" values (%s, %s, %s, %s, %s)',
             (uuid, self.get_depot_id(daemon.depot), host, self._daemon_type_to_int(daemon.TYPE), ceph_name))
+        self.conn.commit()
+        cur.close()
 
     def remove_daemon(self, daemon):
         self._virtual_function()
 
     def remove_daemons(self, daemon_list):
+        cur = self.conn.cursor()
         for daemon in daemon_list:
-            c.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
+            cur.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
                 (self.get_depot_id(daemon.depot), self.get_daemon_uuid(daemon)))
+        self.conn.commit()
+        cur.close()
 
     def get_depot_daemon_list(self, depot, type='all'):
         self._virtual_function()
 
     def set_daemon_uuid(self, daemon, uuid):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('update "TCDS_NODE" set "ID"=%s where "ID"=%s',
+            (host_uuid, self.get_daemon_uuid(daemon)))
+        self.conn.commit()
+        cur.close()
+
     def get_daemon_uuid(self, daemon):
         self._virtual_function()
+
     def set_daemon_host(self, daemon, host_uuid):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('update "TCDS_NODE" set "SERVER_ID"=%s where "ID"=%s',
+            (host_uuid, self.get_daemon_uuid(daemon)))
+        self.conn.commit()
+        cur.close()
+
     def get_daemon_host(self, daemon):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('select "SERVER_ID" from "TCDS_NODE" where "ID" = %s',
+            (self.get_daemon_uuid(daemon),))
+        row = cur.fetchone()
+        cur.close()
+        return row
+
     def host_id_to_ip(self, host_id):
         self._virtual_function()
+
     def set_daemon_ceph_name(self, daemon, ceph_name):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('update "TCDS_NODE" set "CEPH_ID"=%s where "ID"=%s',
+            (ceph_name, self.get_daemon_uuid(daemon)))
+        self.conn.commit()
+        cur.close()
+
     def get_daemon_ceph_name(self, daemon):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('select "CEPH_ID" from "TCDS_NODE" where "ID"=%s',
+            (self.get_daemon_uuid(daemon),))
+        self.conn.commit()
+        cur.close()
 
     def _daemon_type_to_int(self, daemon_type):
         return {'mon': 0, 'mds': 1, 'osd': 2}[daemon_type]

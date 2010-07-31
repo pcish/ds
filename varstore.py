@@ -50,21 +50,85 @@ class CephConfVarStore(VarStore):
     pass
 
 class TcdbVarStore(VarStore):
-    def get_depot_id(self): assert(0)
-    def set_depot_id(self, id): assert(0)
-    def get_depot_state(self): assert(0)
-    def set_depot_state(self, state): assert(0)
-    def add_daemon(self, daemon): assert(0)
-    def remove_daemon(self, daemon): assert(0)
-    def remove_daemons(self, daemon_list): assert(0)
-    def get_daemon_list(self, type): assert(0)
-    def set_daemon_host(self, daemon, daemon_id): assert(0)
-    def get_daemon_host(self, daemon): assert(0)
-    def set_replication_factor(self, factor): assert(0)
-    def get_replication_factor(self): assert(0)
-    def host_id_to_ip(self, host_id): assert(0)
-    def set_daemon_ceph_id(self, daemon, ceph_id): assert(0)
-    def get_daemon_ceph_id(self, daemon): assert(0)
+    con = None
+    def __init__(self):
+        exec 'import psycopg2'
+        exec 'import tcloud.util.globalconfig as globalconfig'
+        gbConfig = globalconfig.GlobalConfig()
+        conn_string = []
+        options_to_get = {
+            'host': globalconfig.OPTION_DB_IP,
+            'dbname': globalconfig.OPTION_DB_NAME,
+            'user': globalconfig.OPTION_DB_USERNAME,
+            'password': globalconfig.OPTION_DB_PASSWORD
+        }
+        for key, option in options_to_get:
+            value = gbConfig.getValue(globalconfig.SECTION_DB, option)
+            if value:
+                conn_string.append('='.join(key, option))
+        conn_string.append('='.join('port', '5432'))
+        self.con = psycopg2.connect(' '.join(conn_string))
+
+    def add_depot(self, depot, uuid, replication, state):
+        c = self.con.cursor()
+        c.execute('insert into "TCDS_DEPOT" values (%s, %s, %s)',
+            (uuid, replication, state))
+        conn.commit()
+        c.close()
+    def del_depot(self, depot):
+        self._virtual_function()
+    def set_depot_id(self, depot, depot_uuid):
+        self._virtual_function()
+    def get_depot_id(self, depot):
+        self._virtual_function()
+    def set_depot_state(self, depot, state):
+        self._virtual_function()
+    def get_depot_state(self, depot):
+        c = self.con.cursor()
+        c.execute('select "STATE" from "TCDS_DEPOT" where "ID"=%s', (self.get_depot_id(depot),))
+        return c.fetchone()
+
+    def set_depot_replication_factor(self, depot, factor):
+        self._virtual_function()
+    def get_depot_replication_factor(self, depot):
+        c = self.con.cursor()
+        c.execute('select "REPLICATION" from "TCDS_DEPOT" where "ID"=%s',
+            (self.get_depot_id(depot),))
+        return c.fetchone()
+
+    def add_daemon(self, daemon, uuid, host, ceph_name):
+        c = self.con.cursor()
+        c.execute('insert into "TCDS_NODE" values (%s, %s, %s, %s, %s)',
+            (uuid, self.get_depot_id(daemon.depot), host, self._daemon_type_to_int(daemon.TYPE), ceph_name))
+
+    def remove_daemon(self, daemon):
+        self._virtual_function()
+
+    def remove_daemons(self, daemon_list):
+        for daemon in daemon_list:
+            c.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
+                (self.get_depot_id(daemon.depot), self.get_daemon_uuid(daemon)))
+
+    def get_depot_daemon_list(self, depot, type='all'):
+        self._virtual_function()
+
+    def set_daemon_uuid(self, daemon, uuid):
+        self._virtual_function()
+    def get_daemon_uuid(self, daemon):
+        self._virtual_function()
+    def set_daemon_host(self, daemon, host_uuid):
+        self._virtual_function()
+    def get_daemon_host(self, daemon):
+        self._virtual_function()
+    def host_id_to_ip(self, host_id):
+        self._virtual_function()
+    def set_daemon_ceph_name(self, daemon, ceph_name):
+        self._virtual_function()
+    def get_daemon_ceph_name(self, daemon):
+        self._virtual_function()
+
+    def _daemon_type_to_int(self, daemon_type):
+        return {'mon': 0, 'mds': 1, 'osd': 2}[daemon_type]
 
 
 class _LocalVarStoreList(list):
@@ -83,8 +147,11 @@ class LocalVarStore(VarStore):
         self.__depot_list = _LocalVarStoreList()
         self.__daemon_list = _LocalVarStoreList()
 
-    def add_depot(self, depot):
+    def add_depot(self, depot, uuid, replication, state):
         self.__depot_list.append(depot)
+        self.__depot_list[depot]._localvars['uuid'] = uuid
+        self.__depot_list[depot]._localvars['replication_factor'] = replication
+        self.__depot_list[depot]._localvars['state'] = state
 
     def del_depot(self, depot):
         self.__depot_list.remove(depot)
@@ -107,9 +174,12 @@ class LocalVarStore(VarStore):
     def get_depot_replication_factor(self, depot):
         return self.__depot_list[depot]._localvars['replication_factor']
 
-    def add_daemon(self, daemon):
+    def add_daemon(self, daemon, uuid, host, ceph_name):
         assert(self.__daemon_list.count(daemon) == 0)
         self.__daemon_list.append(daemon)
+        self.__daemon_list[daemon]._localvars['uuid'] = uuid
+        self.__daemon_list[daemon]._localvars['host'] = host
+        self.__daemon_list[daemon]._localvars['ceph_name'] = ceph_name
 
     def remove_daemon(self, daemon):
         self.__daemon_list.remove(daemon)

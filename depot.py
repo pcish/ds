@@ -27,14 +27,11 @@ class Depot(object):
         self.var = service.var
         self._localvars = {} # TODO: check that we need to init this
 
-    def setup(self, id, replication_factor=3):
-        self.var.set_depot_state(self, self.CONSTANTS['STATE_OFFLINE'])
-        self.var.set_depot_id(self, id)
+    def setup(self):
         #self.config_file_path = '/etc/ceph/%s.conf' % id
-        self.config_file_path = '%s.conf' % id
+        self.config_file_path = '%s.conf' % self.var.get_depot_id(self)
         self.config = TCCephConf()
         self.config.create_default(self.var.get_depot_id(self))
-        self.var.set_depot_replication_factor(self, replication_factor)
         print "new depot"
         return True
 
@@ -70,10 +67,7 @@ class Depot(object):
                 raise ValueError('storage_roles should be one of mon, mds, osd')
             new_daemon_list.append(new_daemon)
             new_ceph_name = self._get_next_ceph_name_for(daemon_spec['type'])
-            self.var.add_daemon(new_daemon)
-            self.var.set_daemon_uuid(new_daemon, daemon_spec['uuid'])
-            self.var.set_daemon_host(new_daemon, daemon_spec['host'])
-            new_daemon.set_ceph_name(new_ceph_name)
+            self.var.add_daemon(new_daemon, daemon_spec['uuid'], daemon_spec['host'], new_ceph_name)
 
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
             daemon_count = self._get_daemon_count()

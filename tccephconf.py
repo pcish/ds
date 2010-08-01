@@ -98,7 +98,7 @@ class TCCephConf(ConfigParser.RawConfigParser):
 
     def __str__(self):
         s = ''
-        for section in self.sections():
+        for section in sorted(self.sections()):
             s += '[%s]\n' % section
             for k, v in self.items(section):
                 s += '%s = %s\n' % (k, v)

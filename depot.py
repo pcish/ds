@@ -33,9 +33,9 @@ class Depot(object):
 
     def setup(self):
         #self.config_file_path = '/etc/ceph/%s.conf' % id
-        self.config_file_path = '%s.conf' % self.var.get_depot_id(self)
+        self.config_file_path = '%s.conf' % self.uuid
         self.config = TCCephConf()
-        self.config.create_default(self.var.get_depot_id(self))
+        self.config.create_default(self.uuid)
         print "new depot"
         return True
 
@@ -43,7 +43,7 @@ class Depot(object):
     def get_info(self):
         try:
             depot_info = {
-            'depot_id': self.var.get_depot_id(self),
+            'depot_id': self.uuid,
             'depot_replication': self.var.get_depot_replication_factor(self),
             'depot_state': ['not ready', 'ready'][self.var.get_depot_state(self)],
             'depot_capacity': 0,

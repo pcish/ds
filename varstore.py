@@ -2,44 +2,58 @@ import inspect
 
 class VarStore(object):
     def __init__(self): print "new varstore"
+
     def add_depot(self, depot):
         self._virtual_function()
+
     def del_depot(self, depot):
         self._virtual_function()
-    def set_depot_id(self, depot, depot_uuid):
+
+    def set_depot_uuid(self, depot, depot_uuid):
         self._virtual_function()
-    def get_depot_id(self, depot):
-        self._virtual_function()
+
     def set_depot_state(self, depot, state):
         self._virtual_function()
+
     def get_depot_state(self, depot):
         self._virtual_function()
+
     def set_depot_replication_factor(self, depot, factor):
         self._virtual_function()
+
     def get_depot_replication_factor(self, depot):
         self._virtual_function()
+
     def add_daemon(self, daemon):
         self._virtual_function()
+
     def remove_daemon(self, daemon):
         self._virtual_function()
+
     def remove_daemons(self, daemon_list):
         self._virtual_function()
+
     def get_depot_daemon_list(self, depot, type='all'):
         self._virtual_function()
+
     def set_daemon_uuid(self, daemon, uuid):
         self._virtual_function()
-    def get_daemon_uuid(self, daemon):
-        self._virtual_function()
+
     def set_daemon_host(self, daemon, host_uuid):
         self._virtual_function()
+
     def get_daemon_host(self, daemon):
         self._virtual_function()
+
     def host_id_to_ip(self, host_id):
         self._virtual_function()
+
     def set_daemon_ceph_name(self, daemon, ceph_name):
         self._virtual_function()
+
     def get_daemon_ceph_name(self, daemon):
         self._virtual_function()
+
     def _virtual_function(self):
         assert 0, 'virtual function %s called' % inspect.stack()[1][3]
 
@@ -54,6 +68,9 @@ class TcdbVarStore(VarStore):
     def __init__(self):
         exec 'import psycopg2'
         exec 'import tcloud.util.globalconfig as globalconfig'
+        self.connect()
+
+    def connect():
         gbConfig = globalconfig.GlobalConfig()
         conn_string = []
         options_to_get = {
@@ -78,30 +95,27 @@ class TcdbVarStore(VarStore):
 
     def del_depot(self, depot):
         cur = self.conn.cursor()
-        cur.execute('delete from "TCDS_DEPOT" where "ID"=%s', (self.get_depot_id(depot),))
+        cur.execute('delete from "TCDS_DEPOT" where "ID"=%s', (depot.uuid,))
         self.conn.commit()
         cur.close()
 
-    def set_depot_id(self, depot, depot_uuid):
+    def set_depot_uuid(self, depot, depot_uuid):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_DEPOT" set "ID"=%s where "ID"=%s',
-            (depot_uuid, self.get_depot_id(depot)))
+            (depot_uuid, depot.uuid))
         self.conn.commit()
         cur.close()
-
-    def get_depot_id(self, depot):
-        self._virtual_function()
 
     def set_depot_state(self, depot, state):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_DEPOT" set "STATE"=%s where "ID"=%s',
-            (state, self.get_depot_id(depot)))
+            (state, depot.uuid))
         self.conn.commit()
         cur.close()
 
     def get_depot_state(self, depot):
         cur = self.conn.cursor()
-        cur.execute('select "STATE" from "TCDS_DEPOT" where "ID"=%s', (self.get_depot_id(depot),))
+        cur.execute('select "STATE" from "TCDS_DEPOT" where "ID"=%s', (depot.uuid,))
         row = cur.fetchone()
         cur.close()
         return row
@@ -109,14 +123,14 @@ class TcdbVarStore(VarStore):
     def set_depot_replication_factor(self, depot, factor):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_DEPOT" set "REPLICATION"=%s where "ID"=%s',
-            (factor, self.get_depot_id(depot)))
+            (factor, depot.uuid))
         conn.commit()
         cur.close()
 
     def get_depot_replication_factor(self, depot):
         cur = self.conn.cursor()
         cur.execute('select "REPLICATION" from "TCDS_DEPOT" where "ID"=%s',
-            (self.get_depot_id(depot),))
+            (depot.uuid,))
         row = cur.fetchone()
         cur.close()
         return row
@@ -135,7 +149,7 @@ class TcdbVarStore(VarStore):
         cur = self.conn.cursor()
         for daemon in daemon_list:
             cur.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
-                (self.get_depot_id(daemon.depot), self.get_daemon_uuid(daemon)))
+                (self.get_depot_id(daemon.depot), daemon.uuid))
         self.conn.commit()
         cur.close()
 
@@ -145,24 +159,21 @@ class TcdbVarStore(VarStore):
     def set_daemon_uuid(self, daemon, uuid):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_NODE" set "ID"=%s where "ID"=%s',
-            (host_uuid, self.get_daemon_uuid(daemon)))
+            (host_uuid, daemon.uuid))
         self.conn.commit()
         cur.close()
-
-    def get_daemon_uuid(self, daemon):
-        self._virtual_function()
 
     def set_daemon_host(self, daemon, host_uuid):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_NODE" set "SERVER_ID"=%s where "ID"=%s',
-            (host_uuid, self.get_daemon_uuid(daemon)))
+            (host_uuid, daemon.uuid))
         self.conn.commit()
         cur.close()
 
     def get_daemon_host(self, daemon):
         cur = self.conn.cursor()
         cur.execute('select "SERVER_ID" from "TCDS_NODE" where "ID" = %s',
-            (self.get_daemon_uuid(daemon),))
+            (daemon.uuid,))
         row = cur.fetchone()
         cur.close()
         return row
@@ -173,14 +184,14 @@ class TcdbVarStore(VarStore):
     def set_daemon_ceph_name(self, daemon, ceph_name):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_NODE" set "CEPH_ID"=%s where "ID"=%s',
-            (ceph_name, self.get_daemon_uuid(daemon)))
+            (ceph_name, daemon.uuid))
         self.conn.commit()
         cur.close()
 
     def get_daemon_ceph_name(self, daemon):
         cur = self.conn.cursor()
         cur.execute('select "CEPH_ID" from "TCDS_NODE" where "ID"=%s',
-            (self.get_daemon_uuid(daemon),))
+            (daemon.uuid,))
         self.conn.commit()
         cur.close()
 
@@ -213,11 +224,8 @@ class LocalVarStore(VarStore):
     def del_depot(self, depot):
         self.__depot_list.remove(depot)
 
-    def set_depot_id(self, depot, depot_uuid):
+    def set_depot_uuid(self, depot, depot_uuid):
         self.__depot_list[depot]._localvars['uuid'] = depot_uuid
-
-    def get_depot_id(self, depot):
-        return self.__depot_list[depot]._localvars['uuid']
 
     def set_depot_state(self, depot, state):
         self.__depot_list[depot]._localvars['state'] = state
@@ -259,9 +267,6 @@ class LocalVarStore(VarStore):
     def set_daemon_uuid(self, daemon, uuid):
         self.__daemon_list[daemon]._localvars['uuid'] = uuid
 
-    def get_daemon_uuid(self, daemon):
-        return self.__daemon_list[daemon]._localvars['uuid']
-
     def set_daemon_host(self, daemon, host_uuid):
         self.__daemon_list[daemon]._localvars['host'] = host_uuid
 
@@ -279,6 +284,4 @@ class LocalVarStore(VarStore):
 
     def get_daemon_ceph_name(self, daemon):
         return self.__daemon_list[daemon]._localvars['ceph_name']
-
-
 

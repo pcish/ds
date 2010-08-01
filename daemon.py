@@ -35,7 +35,7 @@ class Daemon(object):
         self.depot.var.set_daemon_uuid(self, uuid)
 
     def get_uuid(self):
-        return self.depot.var.get_daemon_uuid(self)
+        return self.uuid
 
     def get_host_id(self):
         return self.depot.var.get_daemon_host(self)

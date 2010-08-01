@@ -1,5 +1,6 @@
 import ConfigParser
 import os
+import inspect
 
 class Daemon(object):
     _localvars = None
@@ -16,6 +17,19 @@ class Daemon(object):
         self.depot = depot
         self.uuid = uuid
         self._localvars = {} # TODO: check that we need to init this
+
+    @staticmethod
+    def cmp_name(self, other):
+        print inspect.stack()[1][3]
+        if self.TYPE == other.TYPE:
+            self_name = self.get_ceph_name()
+            other_name = other.get_ceph_name()
+            if self_name.isdigit() and other_name.isdigit():
+                return cmp(int(self_name), int(other_name))
+            else:
+                return cmp(self_name, other_name)
+        else:
+            return cmp(self.TYPE, other.TYPE)
 
     def set_uuid(self, uuid):
         self.depot.var.set_daemon_uuid(self, uuid)

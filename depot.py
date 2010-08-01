@@ -188,7 +188,7 @@ class Depot(object):
 
     def _check_ceph_ids_are_consecutive(self):
         daemon_list = self.get_daemon_list()
-        daemon_list.sort()
+        daemon_list.sort(Mon.cmp_name)
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
         for daemon in daemon_list:
 

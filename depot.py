@@ -11,6 +11,8 @@ class OsdGroup(list):
 
 class Depot(object):
     _localvars = None
+    uuid = None
+    _daemon_map = None
     service = None
     service_globals = None
     var = None
@@ -21,8 +23,10 @@ class Depot(object):
     config_file_path = None
     config = None
 
-    def __init__(self, service):
+    def __init__(self, service, uuid):
         self.service = service
+        self.uuid = uuid
+        self._daemon_map = {}
         self.service_globals = service.service_globals
         self.var = service.var
         self._localvars = {} # TODO: check that we need to init this
@@ -57,17 +61,18 @@ class Depot(object):
         new_daemon_list = []
         for daemon_spec in daemon_spec_list:
             if daemon_spec['type'] == 'mon':
-                new_daemon = Mon(self)
+                new_daemon = Mon(self, daemon_spec['uuid'])
                 new_mons.append(new_daemon)
             elif daemon_spec['type'] == 'mds':
-                new_daemon = Mds(self)
+                new_daemon = Mds(self, daemon_spec['uuid'])
             elif daemon_spec['type'] == 'osd':
-                new_daemon = Osd(self)
+                new_daemon = Osd(self, daemon_spec['uuid'])
             else:
                 raise ValueError('storage_roles should be one of mon, mds, osd')
             new_daemon_list.append(new_daemon)
-            new_ceph_name = self._get_next_ceph_name_for(daemon_spec['type'])
+            new_ceph_name = self._get_next_ceph_name_for(new_daemon.TYPE)
             self.var.add_daemon(new_daemon, daemon_spec['uuid'], daemon_spec['host'], new_ceph_name)
+            self._daemon_map[daemon_spec['uuid']] = new_daemon
 
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
             daemon_count = self._get_daemon_count()
@@ -127,7 +132,9 @@ class Depot(object):
             for daemon in remove_pending:
                 daemon.deactivate()
                 daemon.del_from_config(self.config)
+                del self._daemon_map[daemon.uuid]
             self.var.remove_daemons(remove_pending)
+
 
     def get_state(self):
         return self.var.get_depot_state(self)

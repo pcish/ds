@@ -32,7 +32,7 @@ if __name__ == '__main__':
         ]
     })
 
-    daemons = service._service._depot[did].get_daemon_list()
+    daemons = service._service._depot_map[did].get_daemon_list()
     for daemon in daemons:
         print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
     print '--------------'
@@ -43,7 +43,7 @@ if __name__ == '__main__':
         ],
         'force': True
     })
-    daemons = service._service._depot[did].get_daemon_list()
+    daemons = service._service._depot_map[did].get_daemon_list()
     for daemon in daemons:
         print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
     print '--------------'
@@ -54,7 +54,7 @@ if __name__ == '__main__':
             { 'node_id': 'f0797c41-b21f-4eda-8093-32285453d035', 'storage_roles': [ 'osd' ], 'node_ip': '10.201.193.171'}
         ]
     })
-    daemons = service._service._depot[did].get_daemon_list()
+    daemons = service._service._depot_map[did].get_daemon_list()
     for daemon in daemons:
         print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
-    print service._service._depot[did].config
+    print service._service._depot_map[did].config

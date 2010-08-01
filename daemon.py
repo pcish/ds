@@ -4,6 +4,7 @@ import os
 class Daemon(object):
     _localvars = None
     depot = None
+    uuid = None
 
     DAEMON_NAME = None
     conf_file_path = None
@@ -11,8 +12,9 @@ class Daemon(object):
     INIT_SCRIPT = '/etc/init.d/ceph'
     TYPE = None
 
-    def __init__(self, depot):
+    def __init__(self, depot, uuid):
         self.depot = depot
+        self.uuid = uuid
         self._localvars = {} # TODO: check that we need to init this
 
     def set_uuid(self, uuid):

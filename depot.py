@@ -111,6 +111,7 @@ class Depot(object):
 
             for daemon in new_daemon_list:
                 daemon.activate()
+        return new_daemon_list
 
     def _generate_crushmap(self):
         num_osd = self._get_daemon_count()['num_osd']

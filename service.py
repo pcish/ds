@@ -17,6 +17,7 @@ class TcdsService(object):
         self.var.add_depot(depot, depot_id, replication_factor, depot.CONSTANTS['STATE_OFFLINE'])
         depot.setup()
         self._depot_map[depot_id] = depot
+        return depot
 
     def remove_depot(self, depot_id):
         pass

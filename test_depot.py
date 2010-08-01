@@ -24,7 +24,7 @@ class TestAddDaemonToOnlineDepot(unittest.TestCase):
     service = None
     def setUp(self):
         self.service = TcdsService(Globals(), LocalVarStore())
-        self.depot = Depot(self.service, 'test_depot')
+        self.depot = self.service.create_depot('test_depot', 3)
         host = str(uuid.uuid4())
         node_list = [{'uuid': str(uuid.uuid4()), 'type': 'mon', 'host': host}]
         self.depot.add_daemons(node_list)
@@ -52,7 +52,7 @@ class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
     depot = None
     def setUp(self):
         service = TcdsService(Globals(), LocalVarStore())
-        self.depot = Depot(service, None)
+        self.depot = service.create_depot('test_depot', 3)
 
     def test_check_ceph_ids_are_consecutive(self):
         node_uuid = str(uuid.uuid4())
@@ -62,14 +62,14 @@ class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
         daemon_list = self.depot.get_daemon_list()
         for daemon in daemon_list:
             if daemon.get_uuid() == node_uuid:
-                daemon.set_ceph_id(2)
+                daemon.set_ceph_name(2)
         self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), False)
 
 class Test_get_next_ceph_name_for(unittest.TestCase):
     depot = None
     def setUp(self):
         service = TcdsService(Globals(), LocalVarStore())
-        self.depot = Depot(service, None)
+        self.depot = service.create_depot('test_depot', 3)
 
     def test_get_next_ceph_name_for(self):
         self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)

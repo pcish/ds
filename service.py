@@ -2,7 +2,7 @@ import uuid
 from depot import Depot
 from varstore import LocalVarStore as VariableStore
 from serviceglobals import LocalDebugServiceGlobals as Globals
-
+from serviceglobals import LocalResolv as Resolv
 
 class TcdsService(object):
     _depot_map = {}
@@ -53,7 +53,7 @@ The API functions are basically wrappers for their companion functions in
 TcdsService. An instance of the TcdsService class is maintained for the
 functions to call.
 """
-_service = TcdsService(Globals(), VariableStore())
+_service = TcdsService(Globals(Resolv()), VariableStore())
 
 class TcdsApiErrorResponse(dict):
     def __init__(self, code, message):

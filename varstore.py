@@ -207,8 +207,6 @@ class _LocalVarStoreList(list):
             return list.__getitem__(self, key)
 
 class LocalVarStore(VarStore):
-    resolv = {}
-
     def add_depot(self, depot, uuid, replication, state):
         depot.service._localvars['depots'][uuid] = depot
         depot._localvars['replication'] = replication
@@ -257,12 +255,6 @@ class LocalVarStore(VarStore):
 
     def get_daemon_host(self, daemon):
         return daemon._localvars['host']
-
-    def host_id_to_ip(self, host_id):
-        if host_id in self.resolv:
-            return self.resolv[host_id]
-        else:
-            return ''
 
     def set_daemon_ceph_name(self, daemon, ceph_name):
         daemon._localvars['ceph_name'] = ceph_name

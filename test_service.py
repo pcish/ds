@@ -21,10 +21,16 @@ if __name__ == '__main__':
     else:
         print info
 
+    service._service.service_globals.resolv.mapping['0895d363-2972-4c40-9f5b-0df2b224a2c6'] = '10.0.0.1'
+    service._service.service_globals.resolv.mapping['a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a'] = '10.0.0.2'
+    service._service.service_globals.resolv.mapping['92144222-e7b6-4c13-aeb8-7a32cd2c6458'] = '10.0.0.3'
+    service._service.service_globals.resolv.mapping['f97f46ee-7d40-4385-b9a0-7b46079d699b'] = '10.0.0.4'
+    service._service.service_globals.resolv.mapping['c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e'] = '10.0.0.5'
+    service._service.service_globals.resolv.mapping['f0797c41-b21f-4eda-8093-32285453d035'] = '10.0.0.6'
     print service.addStorageNodes({
         'depot_id': did,
         'node_spec_list': [
-            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon', 'osd' ], 'node_ip': '10.201.193.170'},
+            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon', 'osd' ] },
             { 'node_id': 'a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a', 'storage_roles': [ 'mon', 'osd' ] },
             { 'node_id': '92144222-e7b6-4c13-aeb8-7a32cd2c6458', 'storage_roles': [ 'mon', 'osd' ] },
             { 'node_id': 'f97f46ee-7d40-4385-b9a0-7b46079d699b', 'storage_roles': [ 'mds' ] },
@@ -50,8 +56,8 @@ if __name__ == '__main__':
     service.addStorageNodes({
         'depot_id': did,
         'node_spec_list': [
-            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon' ], 'node_ip': '10.201.193.170'},
-            { 'node_id': 'f0797c41-b21f-4eda-8093-32285453d035', 'storage_roles': [ 'osd' ], 'node_ip': '10.201.193.171'}
+            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon' ]},
+            { 'node_id': 'f0797c41-b21f-4eda-8093-32285453d035', 'storage_roles': [ 'osd' ]}
         ]
     })
     daemons = service._service._depot_map[did].get_daemon_list()

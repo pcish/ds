@@ -41,7 +41,7 @@ class Daemon(object):
         return self.depot.var.get_daemon_host(self)
 
     def get_host_ip(self):
-        return self.depot.var.host_id_to_ip(self.get_host_id())
+        return self.depot.service.service_globals.resolv.uuid_to_ip(self.get_host_id())
 
     def set_ceph_name(self, name):
         self.depot.var.set_daemon_ceph_name(self, name)

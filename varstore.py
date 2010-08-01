@@ -138,7 +138,7 @@ class TcdbVarStore(VarStore):
     def add_daemon(self, daemon, uuid, host, ceph_name):
         cur = self.conn.cursor()
         cur.execute('insert into "TCDS_NODE" values (%s, %s, %s, %s, %s)',
-            (uuid, self.get_depot_id(daemon.depot), host, self._daemon_type_to_int(daemon.TYPE), ceph_name))
+            (uuid, daemon.depot.uuid, host, self._daemon_type_to_int(daemon.TYPE), ceph_name))
         self.conn.commit()
         cur.close()
 
@@ -149,7 +149,7 @@ class TcdbVarStore(VarStore):
         cur = self.conn.cursor()
         for daemon in daemon_list:
             cur.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
-                (self.get_depot_id(daemon.depot), daemon.uuid))
+                (daemon.depot.uuid, daemon.uuid))
         self.conn.commit()
         cur.close()
 
@@ -207,71 +207,56 @@ class _LocalVarStoreList(list):
             return list.__getitem__(self, key)
 
 class LocalVarStore(VarStore):
-    __depot_list = None
-    __daemon_list = None
     resolv = {}
 
-    def __init__(self):
-        self.__depot_list = _LocalVarStoreList()
-        self.__daemon_list = _LocalVarStoreList()
-
     def add_depot(self, depot, uuid, replication, state):
-        self.__depot_list.append(depot)
-        self.__depot_list[depot]._localvars['uuid'] = uuid
-        self.__depot_list[depot]._localvars['replication_factor'] = replication
-        self.__depot_list[depot]._localvars['state'] = state
+        depot.service._localvars['depots'][uuid] = depot
+        depot._localvars['replication'] = replication
+        depot._localvars['state'] = state
 
     def del_depot(self, depot):
-        self.__depot_list.remove(depot)
+        del depot.service._localvars['depots'][depot.uuid]
 
     def set_depot_uuid(self, depot, depot_uuid):
-        self.__depot_list[depot]._localvars['uuid'] = depot_uuid
+        depot.service._localvars['depots'][depot_uuid] = depot.service._localvars['depots'][depot.uuid]
+        del depot.service._localvars['depots'][depot.uuid]
 
     def set_depot_state(self, depot, state):
-        self.__depot_list[depot]._localvars['state'] = state
+        depot._localvars['state'] = state
 
     def get_depot_state(self, depot):
-        return self.__depot_list[depot]._localvars['state']
+        return depot._localvars['state']
 
     def set_depot_replication_factor(self, depot, factor):
-        self.__depot_list[depot]._localvars['replication_factor'] = factor
+        depot._localvars['replication'] = factor
 
     def get_depot_replication_factor(self, depot):
-        return self.__depot_list[depot]._localvars['replication_factor']
+        return depot._localvars['replication']
 
     def add_daemon(self, daemon, uuid, host, ceph_name):
-        assert(self.__daemon_list.count(daemon) == 0)
-        self.__daemon_list.append(daemon)
-        self.__daemon_list[daemon]._localvars['uuid'] = uuid
-        self.__daemon_list[daemon]._localvars['host'] = host
-        self.__daemon_list[daemon]._localvars['ceph_name'] = ceph_name
+        daemon.depot._localvars['daemons'][uuid] = daemon
+        daemon._localvars['host'] = host
+        daemon._localvars['ceph_name'] = ceph_name
 
     def remove_daemon(self, daemon):
-        self.__daemon_list.remove(daemon)
-        assert(self.__daemon_list.count(daemon) == 0)
+        del daemon.depot._localvars['daemons'][daemon.uuid]
 
     def remove_daemons(self, daemon_list):
         for daemon in daemon_list:
-            self.__daemon_list.remove(daemon)
-            assert(self.__daemon_list.count(daemon) == 0)
+            del daemon.depot._localvars['daemons'][daemon.uuid]
 
     def get_depot_daemon_list(self, depot, type='all'):
-        if type == 'all':
-            return self.__daemon_list
-        return_list = []
-        for daemon in self.__daemon_list:
-            if daemon.TYPE == type:
-                return_list.append(daemon)
-        return return_list
+        self._virtual_function()
 
     def set_daemon_uuid(self, daemon, uuid):
-        self.__daemon_list[daemon]._localvars['uuid'] = uuid
+        daemon.depot._localvars['daemons'][uuid] = daemon.depot._localvars['daemons'][daemon.uuid]
+        del daemon.depot._localvars['daemons'][daemon.uuid]
 
     def set_daemon_host(self, daemon, host_uuid):
-        self.__daemon_list[daemon]._localvars['host'] = host_uuid
+        daemon._localvars['host'] = host_uuid
 
     def get_daemon_host(self, daemon):
-        return self.__daemon_list[daemon]._localvars['host']
+        return daemon._localvars['host']
 
     def host_id_to_ip(self, host_id):
         if host_id in self.resolv:
@@ -280,8 +265,8 @@ class LocalVarStore(VarStore):
             return ''
 
     def set_daemon_ceph_name(self, daemon, ceph_name):
-        self.__daemon_list[daemon]._localvars['ceph_name'] = ceph_name
+        daemon._localvars['ceph_name'] = ceph_name
 
     def get_daemon_ceph_name(self, daemon):
-        return self.__daemon_list[daemon]._localvars['ceph_name']
+        return daemon._localvars['ceph_name']
 

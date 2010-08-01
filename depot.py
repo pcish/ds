@@ -30,6 +30,7 @@ class Depot(object):
         self.service_globals = service.service_globals
         self.var = service.var
         self._localvars = {} # TODO: check that we need to init this
+        self._localvars['daemons'] = {}
 
     def setup(self):
         #self.config_file_path = '/etc/ceph/%s.conf' % id
@@ -144,7 +145,13 @@ class Depot(object):
         self.var.set_depot_state(self, state)
 
     def get_daemon_list(self, type='all'):
-        return self.var.get_depot_daemon_list(self, type)
+        if type == 'all':
+            return self._daemon_map.values()
+        return_list = []
+        for daemon in self._daemon_map.values():
+            if daemon.TYPE == type:
+                return_list.append(daemon)
+        return return_list
 
     def _get_daemon_count(self):
         daemon_list = self.get_daemon_list()

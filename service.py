@@ -6,9 +6,12 @@ from serviceglobals import LocalDebugServiceGlobals as Globals
 
 class TcdsService(object):
     _depot_map = {}
+    _localvars = None
     service_globals = None
     def __init__(self, service_globals, varstore):
         self._depot_map = {}
+        self._localvars = {}
+        self._localvars['depots'] = {}
         self.service_globals = service_globals
         self.var = varstore
 
@@ -27,12 +30,12 @@ class TcdsService(object):
         return depot_info
 
     def add_daemons_to_depot(self, depot_id, daemon_spec_list):
-        depot_info = self._depot_map[depot_id].add_daemons(daemon_spec_list)
-        return depot_info
+        self._depot_map[depot_id].add_daemons(daemon_spec_list)
+        return self._depot_map[depot_id].get_info()
 
     def del_nodes_from_depot(self, depot_id, node_list, force=False):
-        depot_info = self._depot_map[depot_id].remove_nodes(node_list, force)
-        return depot_info
+        self._depot_map[depot_id].remove_nodes(node_list, force)
+        return self._depot_map[depot_id].get_info()
 
     def select_profile(self, profile):
         if profile == 'normal':

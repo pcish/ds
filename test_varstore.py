@@ -68,10 +68,29 @@ class TestVarStore(unittest.TestCase):
         self.assertEquals(self.var.get_daemon_ceph_name(daemon), str(ceph_name))
         self.var.remove_daemons((daemon,))
         self.assertRaises(KeyError, self.var.get_daemon_ceph_name, daemon)
-    """
-    def get_depot_daemon_list(self, depot, type='all'):
-        self._virtual_function()
 
+    def get_depot_daemon_list(self, depot, type='all'):
+        service = TcdsService(Globals(Resolv()), self.var)
+        uuidstr = str(uuid.uuid4())
+        depot = Depot(service, uuidstr)
+        self.var.add_depot(depot, uuidstr, 3, depot.CONSTANTS['STATE_OFFLINE'])
+        uuidstr = str(uuid.uuid4())
+        daemon = Mon(depot, uuidstr)
+        host = str(uuid.uuid4())
+        ceph_name = 0
+        self.var.add_daemon(daemon, uuidstr, host, ceph_name)
+        self.assertEquals(self.var.get_depot_daemon_list(daemon), [{'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr}])
+        uuidstr2 = str(uuid.uuid4())
+        daemon2 = Mds(depot, uuidstr2)
+        host2 = str(uuid.uuid4())
+        ceph_name2 = 'b'
+        self.var.add_daemon(daemon2, uuidstr2, host2, ceph_name2)
+        self.assertEquals(self.var.get_depot_daemon_list(daemon),
+            [{'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr},
+             {'type': 'mds', 'host': host2, 'ceph_name': 'b', 'uuid': uuidstr2},
+            ])
+
+    """
     def set_daemon_uuid(self, daemon, uuid):
         daemon.depot._localvars['daemons'][uuid] = daemon.depot._localvars['daemons'][daemon.uuid]
         del daemon.depot._localvars['daemons'][daemon.uuid]
@@ -94,6 +113,17 @@ class TestLocalVarStore(TestVarStore):
         self.var = LocalVarStore()
     def run(self, *args, **kwds):
         unittest.TestCase.run(self, *args, **kwds)
+
+class TestTcdbVarStore(TestVarStore):
+    def setUp(self):
+        try:
+            self.var = TcdbVarStore()
+        except Exception as e:
+            self.var = None
+
+    def run(self, *args, **kwds):
+        if self.var is not None:
+            unittest.TestCase.run(self, *args, **kwds)
 
 if __name__ == '__main__':
     unittest.main()

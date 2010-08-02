@@ -138,7 +138,11 @@ class TcdbVarStore(VarStore):
         cur.close()
 
     def remove_daemon(self, daemon):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
+            (daemon.depot.uuid, daemon.uuid))
+        self.conn.commit()
+        cur.close()
 
     def remove_daemons(self, daemon_list):
         cur = self.conn.cursor()
@@ -149,7 +153,16 @@ class TcdbVarStore(VarStore):
         cur.close()
 
     def get_depot_daemon_list(self, depot, type='all'):
-        self._virtual_function()
+        cur = self.conn.cursor()
+        cur.execute('select "ID", "SERVER_ID", "CEPH_ID", "ROLE" from "TCDS_NODE" where "DEPOT_ID"=%s',
+            (depot.uuid,))
+        rows = cur.fetchall()
+        cur.close()
+        ret_list = []
+        for daemon in rows:
+            if type == 'all' or _daemon_int_to_type(daemon[3]) == type:
+                ret_list.append({'uuid': daemon[0], 'type': _daemon_int_to_type(daemon[3]), 'host': daemon[1], 'ceph_name': daemon[2]})
+        return ret_list
 
     def set_daemon_uuid(self, daemon, uuid):
         cur = self.conn.cursor()
@@ -189,6 +202,9 @@ class TcdbVarStore(VarStore):
 
     def _daemon_type_to_int(self, daemon_type):
         return {'mon': 0, 'mds': 1, 'osd': 2}[daemon_type]
+
+    def _daemon_int_to_type(self, type_int):
+        return {'0': 'mon', '1': 'mds', '2': 'osd'}[type_int]
 
 
 class _LocalVarStoreList(list):
@@ -237,7 +253,11 @@ class LocalVarStore(VarStore):
             del daemon.depot._localvars['daemons'][daemon.uuid]
 
     def get_depot_daemon_list(self, depot, type='all'):
-        self._virtual_function()
+        ret_list = []
+        for uuid, daemon in depot._localvars['daemons']:
+            if type == 'all' or daemon.TYPE == type:
+                ret_list.append({'uuid': uuid, 'type': daemon.TYPE, 'host': daemon.get_host_id(), 'ceph_name': daemon.get_ceph_name()})
+        return ret_list
 
     def set_daemon_uuid(self, daemon, uuid):
         daemon.depot._localvars['daemons'][uuid] = daemon.depot._localvars['daemons'][daemon.uuid]

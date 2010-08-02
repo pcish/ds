@@ -254,7 +254,7 @@ class LocalVarStore(VarStore):
 
     def get_depot_daemon_list(self, depot, type='all'):
         ret_list = []
-        for uuid, daemon in depot._localvars['daemons']:
+        for uuid, daemon in depot._localvars['daemons'].items():
             if type == 'all' or daemon.TYPE == type:
                 ret_list.append({'uuid': uuid, 'type': daemon.TYPE, 'host': daemon.get_host_id(), 'ceph_name': daemon.get_ceph_name()})
         return ret_list

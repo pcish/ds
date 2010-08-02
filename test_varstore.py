@@ -3,7 +3,7 @@ import uuid
 from varstore import *
 from service import TcdsService
 from depot import Depot
-from daemon import Mon
+from daemon import Mon, Mds
 from serviceglobals import LocalUnittestServiceGlobals as Globals
 from serviceglobals import LocalResolv as Resolv
 
@@ -69,7 +69,7 @@ class TestVarStore(unittest.TestCase):
         self.var.remove_daemons((daemon,))
         self.assertRaises(KeyError, self.var.get_daemon_ceph_name, daemon)
 
-    def get_depot_daemon_list(self, depot, type='all'):
+    def test_get_depot_daemon_list(self):
         service = TcdsService(Globals(Resolv()), self.var)
         uuidstr = str(uuid.uuid4())
         depot = Depot(service, uuidstr)
@@ -79,13 +79,13 @@ class TestVarStore(unittest.TestCase):
         host = str(uuid.uuid4())
         ceph_name = 0
         self.var.add_daemon(daemon, uuidstr, host, ceph_name)
-        self.assertEquals(self.var.get_depot_daemon_list(daemon), [{'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr}])
+        self.assertEquals(self.var.get_depot_daemon_list(depot), [{'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr}])
         uuidstr2 = str(uuid.uuid4())
         daemon2 = Mds(depot, uuidstr2)
         host2 = str(uuid.uuid4())
         ceph_name2 = 'b'
         self.var.add_daemon(daemon2, uuidstr2, host2, ceph_name2)
-        self.assertEquals(self.var.get_depot_daemon_list(daemon),
+        self.assertEquals(self.var.get_depot_daemon_list(depot),
             [{'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr},
              {'type': 'mds', 'host': host2, 'ceph_name': 'b', 'uuid': uuidstr2},
             ])

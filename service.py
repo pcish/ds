@@ -6,12 +6,9 @@ from serviceglobals import LocalResolv as Resolv
 
 class TcdsService(object):
     _depot_map = {}
-    _localvars = None
     service_globals = None
     def __init__(self, service_globals, varstore):
         self._depot_map = {}
-        self._localvars = {}
-        self._localvars['depots'] = {}
         self.service_globals = service_globals
         self.var = varstore
 

@@ -10,7 +10,6 @@ class OsdGroup(list):
     seqno = None
 
 class Depot(object):
-    _localvars = None
     uuid = None
     _daemon_map = None
     service = None
@@ -29,8 +28,6 @@ class Depot(object):
         self._daemon_map = {}
         self.service_globals = service.service_globals
         self.var = service.var
-        self._localvars = {} # TODO: check that we need to init this
-        self._localvars['daemons'] = {}
 
     def setup(self):
         #self.config_file_path = '/etc/ceph/%s.conf' % id

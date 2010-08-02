@@ -3,7 +3,6 @@ import os
 import inspect
 
 class Daemon(object):
-    _localvars = None
     depot = None
     uuid = None
 
@@ -16,7 +15,6 @@ class Daemon(object):
     def __init__(self, depot, uuid):
         self.depot = depot
         self.uuid = uuid
-        self._localvars = {} # TODO: check that we need to init this
 
     @staticmethod
     def cmp_name(self, other):

@@ -217,69 +217,84 @@ class _LocalVarStoreList(list):
             return list.__getitem__(self, key)
 
 class LocalVarStore(VarStore):
+    depots = None
+    class InternalObject(object):
+        _localvars = {}
+        _children = {}
+        def __init__(self):
+            self._localvars = {}
+            self._children = {}
+
+    def __init__(self):
+        self.depots = {}
+
     def add_depot(self, depot, uuid, replication, state):
-        depot.service._localvars['depots'][uuid] = depot
-        depot._localvars['replication'] = replication
-        depot._localvars['state'] = state
+        self.depots[uuid] = self.InternalObject()
+        self.depots[uuid]._localvars['replication'] = replication
+        self.depots[uuid]._localvars['state'] = state
 
     def del_depot(self, depot):
-        del depot.service._localvars['depots'][depot.uuid]
+        del self.depots[depot.uuid]
 
     def set_depot_uuid(self, depot, depot_uuid):
-        depot.service._localvars['depots'][depot_uuid] = depot.service._localvars['depots'][depot.uuid]
-        del depot.service._localvars['depots'][depot.uuid]
+        self.depots[depot_uuid] = self.depots[depot.uuid]
+        del self.depots[depot.uuid]
 
     def set_depot_state(self, depot, state):
-        depot._localvars['state'] = state
+        self.depots[depot.uuid]._localvars['state'] = state
 
     def get_depot_state(self, depot):
-        # yes this is silly, but we need to raise a KeyError if the depot doesn't exist
-        return depot.service._localvars['depots'][depot.uuid]._localvars['state']
+        return self.depots[depot.uuid]._localvars['state']
 
     def set_depot_replication_factor(self, depot, factor):
-        depot._localvars['replication'] = factor
+        self.depots[depot.uuid]._localvars['replication'] = factor
 
     def get_depot_replication_factor(self, depot):
-        return depot.service._localvars['depots'][depot.uuid]._localvars['replication']
+        return self.depots[depot.uuid]._localvars['replication']
 
     def get_depot_list(self):
         ret_list = []
-        for uuid, depot in service._localvars['depots'].items():
+        for uuid, depot in self.depots[depot.uuid].items():
             ret_list.append({'uuid': uuid, 'replication_factor': depot._localvars['replication'], 'state': depot._localvars['state']})
         return ret_list
 
     def add_daemon(self, daemon, uuid, host, ceph_name):
-        daemon.depot._localvars['daemons'][uuid] = daemon
-        daemon._localvars['host'] = host
-        daemon._localvars['ceph_name'] = str(ceph_name)
+        self.depots[daemon.depot.uuid]._children[uuid] = self.InternalObject()
+        self.depots[daemon.depot.uuid]._children[uuid]._localvars['host'] = host
+        self.depots[daemon.depot.uuid]._children[uuid]._localvars['ceph_name'] = str(ceph_name)
+        self.depots[daemon.depot.uuid]._children[uuid]._localvars['type'] = daemon.TYPE
 
     def remove_daemon(self, daemon):
-        del daemon.depot._localvars['daemons'][daemon.uuid]
+        del self.depots[daemon.depot.uuid]._children[daemon.uuid]
 
     def remove_daemons(self, daemon_list):
         for daemon in daemon_list:
-            del daemon.depot._localvars['daemons'][daemon.uuid]
+            del self.depots[daemon.depot.uuid]._children[daemon.uuid]
 
     def get_depot_daemon_list(self, depot, type='all'):
         ret_list = []
-        for uuid, daemon in depot._localvars['daemons'].items():
-            if type == 'all' or daemon.TYPE == type:
-                ret_list.append({'uuid': uuid, 'type': daemon.TYPE, 'host': daemon.get_host_id(), 'ceph_name': daemon.get_ceph_name()})
+        for uuid, daemon in self.depots[depot.uuid]._children.items():
+            if type == 'all' or daemon._localvars['type'] == type:
+                ret_list.append({
+                    'uuid': uuid, 'type': daemon._localvars['type'],
+                    'host': daemon._localvars['host'],
+                    'ceph_name': daemon._localvars['ceph_name']
+                })
         return ret_list
 
     def set_daemon_uuid(self, daemon, uuid):
-        daemon.depot._localvars['daemons'][uuid] = daemon.depot._localvars['daemons'][daemon.uuid]
-        del daemon.depot._localvars['daemons'][daemon.uuid]
+        self.depots[daemon.depot.uuid]._children[uuid] = self.depots[daemon.depot.uuid]._children[daemon.uuid]
+        del self.depots[daemon.depot.uuid]._children[daemon.uuid]
 
     def set_daemon_host(self, daemon, host_uuid):
-        daemon._localvars['host'] = host_uuid
+        self.depots[daemon.depot.uuid]._children[daemon.uuid]._localvars['host'] = host_uuid
 
     def get_daemon_host(self, daemon):
-        return daemon.depot._localvars['daemons'][daemon.uuid]._localvars['host']
+        return self.depots[daemon.depot.uuid]._children[daemon.uuid]._localvars['host']
 
     def set_daemon_ceph_name(self, daemon, ceph_name):
-        daemon._localvars['ceph_name'] = str(ceph_name)
+        self.depots[daemon.depot.uuid]._children[daemon.uuid]._localvars['ceph_name'] = str(ceph_name)
 
     def get_daemon_ceph_name(self, daemon):
-        return daemon.depot._localvars['daemons'][daemon.uuid]._localvars['ceph_name']
+        return self.depots[daemon.depot.uuid]._children[daemon.uuid]._localvars['ceph_name']
 

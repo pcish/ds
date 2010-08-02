@@ -17,7 +17,7 @@ class TestTcdbVarStore(TestVarStore):
         cur = conn.cursor()
         cur.execute('insert into "SERVICE_GROUP" values (%s, 4, 5)', (self.depot_uuid,))
         conn.commit()
-        cur.close
+        cur.close()
         conn.close()
         try:
             self.var = TcdbVarStore()
@@ -34,7 +34,7 @@ class TestTcdbVarStore(TestVarStore):
         cur = conn.cursor()
         cur.execute('delete from "SERVICE_GROUP" where "ID"=%s', (self.depot_uuid,))
         conn.commit()
-        cur.close
+        cur.close()
         conn.close()
 
 if __name__ == '__main__':

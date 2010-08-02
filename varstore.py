@@ -96,7 +96,9 @@ class TcdbVarStore(VarStore):
         cur.execute('select "STATE" from "TCDS_DEPOT" where "ID"=%s', (depot.uuid,))
         row = cur.fetchone()
         cur.close()
-        return row[0]
+        if row is None:
+            raise KeyError
+        return int(row[0])
 
     def set_depot_replication_factor(self, depot, factor):
         cur = self.conn.cursor()
@@ -111,7 +113,9 @@ class TcdbVarStore(VarStore):
             (depot.uuid,))
         row = cur.fetchone()
         cur.close()
-        return row[0]
+        if row is None:
+            raise KeyError
+        return int(row[0])
 
     def add_daemon(self, daemon, uuid, host, ceph_name):
         cur = self.conn.cursor()
@@ -167,6 +171,8 @@ class TcdbVarStore(VarStore):
             (daemon.uuid,))
         row = cur.fetchone()
         cur.close()
+        if row is None:
+            raise KeyError
         return row[0]
 
     def set_daemon_ceph_name(self, daemon, ceph_name):

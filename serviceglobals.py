@@ -76,14 +76,14 @@ class LocalResolv(Resolv):
         else:
             return ''
 
-class TcdsResolv(Resolv):
+class TcdbResolv(Resolv):
     conn = None
     def __init__(self):
-        exec 'import psycopg2'
-        exec 'import tcloud.util.globalconfig as globalconfig'
         self.connect()
 
-    def connect():
+    def connect(self):
+        exec 'import psycopg2'
+        exec 'import tcloud.util.globalconfig as globalconfig'
         gbConfig = globalconfig.GlobalConfig()
         conn_string = []
         options_to_get = {
@@ -92,11 +92,11 @@ class TcdsResolv(Resolv):
             'user': globalconfig.OPTION_DB_USERNAME,
             'password': globalconfig.OPTION_DB_PASSWORD
         }
-        for key, option in options_to_get:
+        for key, option in options_to_get.items():
             value = gbConfig.getValue(globalconfig.SECTION_DB, option)
             if value:
-                conn_string.append('='.join(key, option))
-        conn_string.append('='.join('port', '5432'))
+                conn_string.append('='.join((key, value)))
+        conn_string.append('='.join(('port', '5432')))
         self.conn = psycopg2.connect(' '.join(conn_string))
 
     def uuid_to_ip(self, uuid):

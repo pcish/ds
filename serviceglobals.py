@@ -98,8 +98,29 @@ class LocalResolv(Resolv):
 
 class TcdbResolv(Resolv):
     conn = None
+    class ip(object):
+        _MAX_IP = 0xffffffff
+        @staticmethod
+        def long_to_str(long_ip):
+            if ip._MAX_IP < long_ip or long_ip < 0:
+                    raise TypeError("expected int between 0 and %d inclusive" % ip._MAX_IP)
+            return '%d.%d.%d.%d' % (long_ip>>24 & 255, long_ip>>16 & 255, long_ip>>8 & 255, long_ip & 255)
+
     def __init__(self):
         self.conn = Tcdb.connect()
 
     def uuid_to_ip(self, uuid):
-        pass
+        cur = self.conn.cursor()
+        cur.execute('select "IP_ADDRESS"."IP4"
+        FROM "IP_ADDRESS","NETWORK_INTERFACE","NETWORK"
+        WHERE "NETWORK_INTERFACE"."MAC_ADDRESS"="IP_ADDRESS"."MAC_ADDRESS"
+        AND "NETWORK_INTERFACE"."NETWORK_ID"="NETWORK"."ID"
+        AND "NETWORK"."FUNCTION_TYPE"=1
+        AND "NETWORK_INTERFACE"."MACHINE_ID"=%s', (uuid,))
+        row = cur.fetchone()
+        cur.close()
+        if row is None:
+            return KeyError
+        return ip.long_to_str(row[0])
+
+

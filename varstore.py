@@ -43,9 +43,6 @@ class VarStore(object):
     def get_daemon_host(self, daemon):
         self._virtual_function()
 
-    def host_id_to_ip(self, host_id):
-        self._virtual_function()
-
     def set_daemon_ceph_name(self, daemon, ceph_name):
         self._virtual_function()
 
@@ -176,9 +173,6 @@ class TcdbVarStore(VarStore):
         cur.close()
         return row
 
-    def host_id_to_ip(self, host_id):
-        self._virtual_function()
-
     def set_daemon_ceph_name(self, daemon, ceph_name):
         cur = self.conn.cursor()
         cur.execute('update "TCDS_NODE" set "CEPH_ID"=%s where "ID"=%s',
@@ -221,13 +215,14 @@ class LocalVarStore(VarStore):
         depot._localvars['state'] = state
 
     def get_depot_state(self, depot):
-        return depot._localvars['state']
+        # yes this is silly, but we need to raise a KeyError if the depot doesn't exist
+        return depot.service._localvars['depots'][depot.uuid]._localvars['state']
 
     def set_depot_replication_factor(self, depot, factor):
         depot._localvars['replication'] = factor
 
     def get_depot_replication_factor(self, depot):
-        return depot._localvars['replication']
+        return depot.service._localvars['depots'][depot.uuid]._localvars['replication']
 
     def add_daemon(self, daemon, uuid, host, ceph_name):
         daemon.depot._localvars['daemons'][uuid] = daemon
@@ -252,11 +247,11 @@ class LocalVarStore(VarStore):
         daemon._localvars['host'] = host_uuid
 
     def get_daemon_host(self, daemon):
-        return daemon._localvars['host']
+        return daemon.depot._localvars['daemons'][daemon.uuid]._localvars['host']
 
     def set_daemon_ceph_name(self, daemon, ceph_name):
         daemon._localvars['ceph_name'] = str(ceph_name)
 
     def get_daemon_ceph_name(self, daemon):
-        return daemon._localvars['ceph_name']
+        return daemon.depot._localvars['daemons'][daemon.uuid]._localvars['ceph_name']
 

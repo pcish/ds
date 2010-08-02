@@ -17,7 +17,8 @@ class Depot(object):
     var = None
     CONSTANTS = {
         'STATE_OFFLINE': 0,
-        'STATE_ONLINE': 1
+        'STATE_ONLINE': 1,
+        'CONFIG_FILE_PATH_PREFIX': ''
     }
     config_file_path = None
     config = None
@@ -28,33 +29,34 @@ class Depot(object):
         self._daemon_map = {}
         self.service_globals = service.service_globals
         self.var = service.var
+        self.config_file_path = os.path.join(self.CONSTANTS['CONFIG_FILE_PATH_PREFIX'], '%s.conf' % self.uuid)
 
     def _load_saved_state(self):
-        daemon_spec_list = self.get_daemon_list()
+        daemon_spec_list = self.var.get_depot_daemon_list(self)
         for daemon_spec in daemon_spec_list:
-            daemon = _new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
+            daemon = self._new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
             self._daemon_map[daemon.uuid] = daemon
             daemon._load_saved_state()
+        self._generate_ceph_conf()
 
     def setup(self):
-        #self.config_file_path = '/etc/ceph/%s.conf' % id
-        self.config_file_path = '%s.conf' % self.uuid
+        self._generate_ceph_conf()
+
+    def _generate_ceph_conf(self):
         self.config = TCCephConf()
         self.config.create_default(self.uuid)
-        return True
+        daemon_list = self.get_daemon_list()
+        for daemon in daemon_list:
+            daemon.add_to_config(self.config)
 
-    def __del__(self): pass
     def get_info(self):
-        try:
-            depot_info = {
+        depot_info = {
             'depot_id': self.uuid,
             'depot_replication': self.var.get_depot_replication_factor(self),
             'depot_state': ['not ready', 'ready'][self.var.get_depot_state(self)],
             'depot_capacity': 0,
             'depot_usage': 0
-            }
-        except Exception as e:
-            print e
+        }
         return depot_info
         #TODO get actual usage
 
@@ -74,7 +76,7 @@ class Depot(object):
         # create daemon instances
         new_daemon_list = []
         for daemon_spec in daemon_spec_list:
-            new_daemon = _new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
+            new_daemon = self._new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
             new_daemon_list.append(new_daemon)
             if new_daemon.TYPE == 'mon':
                 new_mons.append(new_daemon)
@@ -92,8 +94,7 @@ class Depot(object):
             old_config = copy.deepcopy(self.config)
             old_config_str = '%s' % old_config
             for daemon in new_daemon_list:
-                daemon.set_config(old_config)
-                daemon.setup()
+                daemon.setup(old_config)
             for daemon in new_daemon_list:
                 daemon.add_to_config(self.config)
             for daemon in new_daemon_list:
@@ -104,12 +105,10 @@ class Depot(object):
                     # add monitor to the mon map
                     cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_name(), daemon.get_host_ip())
                     self.service_globals.run_shell_command(cmd)
-
             num_osd = self._get_daemon_count()['num_osd']
             if num_osd > orig_num_osd:
                 # set max osd
                 cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
-
                 self.service_globals.run_shell_command(cmd)
 
                 # update crush map
@@ -119,6 +118,7 @@ class Depot(object):
 
             for daemon in new_daemon_list:
                 daemon.activate()
+            self.write_config()
         return new_daemon_list
 
     def _generate_crushmap(self):
@@ -131,19 +131,26 @@ class Depot(object):
         daemon_list = self.get_daemon_list()
         daemon_count = self._get_daemon_count()
         remove_pending = []
+        processed_nodes = []
         for node in node_list:
+            if node['node_id'] in processed_nodes: # skip duplicates
+                continue
+            processed_nodes.append(node['node_id'])
             for daemon in daemon_list:
                 if daemon.get_host_id() == node['node_id']:
                     remove_pending.append(daemon)
                     daemon_count['num_'+daemon.TYPE] = daemon_count['num_'+daemon.TYPE] - 1
 
         if force or self._get_meets_min_requirements(replication=self.var.get_depot_replication_factor(self), **daemon_count):
-            for daemon in remove_pending:
-                daemon.deactivate()
-                daemon.del_from_config(self.config)
-                del self._daemon_map[daemon.uuid]
-            self.var.remove_daemons(remove_pending)
+            self._del_daemons(remove_pending)
 
+    def _del_daemons(self, daemons_to_remove):
+        for daemon in daemons_to_remove:
+            daemon.deactivate()
+            daemon.del_from_config(self.config)
+            del self._daemon_map[daemon.uuid]
+        self.var.remove_daemons(daemons_to_remove)
+        self.write_config()
 
     def get_state(self):
         return self.var.get_depot_state(self)
@@ -184,7 +191,7 @@ class Depot(object):
             raise TypeError('int arguments expected, got %s, %s, %s, %s' %
                 (type(replication), type(num_mon), type(num_mds), type(num_osd)))
         if replication < 1 or num_mon < 0 or num_mds < 0 or num_osd < 0:
-            raise ValueError
+            raise ValueError('got (rep,mon,mds,osd)=(%s,%s,%s,%s)' % (replication, num_mon, num_mds, num_osd))
         if num_mon >= 3 and num_mds >= 2 and num_osd >= replication:
             return True
         else:
@@ -217,6 +224,11 @@ class Depot(object):
                 return False
         return True
 
+    def write_config(self):
+        assert self.config_file_path is not None, 'config_file_path not set'
+        with open(self.config_file_path, 'wb') as config_file:
+            self.config.write(config_file)
+
     def activate(self):
         if self.get_state() != self.CONSTANTS['STATE_OFFLINE']: return False
         daemon_list = self.get_daemon_list()
@@ -226,9 +238,7 @@ class Depot(object):
             daemon.add_to_config(self.config)
             next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
 
-        assert self.config_file_path is not None, 'config_file_path not set'
-        with open(self.config_file_path, 'wb') as config_file:
-            self.config.write(config_file)
+        self.write_config()
         for daemon in daemon_list:
             daemon.set_config(self.config)
 
@@ -242,7 +252,10 @@ class Depot(object):
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
         return True
 
-    def deactivate(self): pass
+    def deactivate(self):
+        for daemon in self.get_daemon_list():
+            daemon.deactivate()
+        self.set_state(self.CONSTANTS['STATE_OFFLINE'])
 
 
 

@@ -4,8 +4,8 @@ from depot import Depot
 from service import TcdsService
 from daemon import Mon, Mds, Osd
 from varstore import LocalVarStore
-from serviceglobals import LocalUnittestServiceGlobals as Globals
-from serviceglobals import LocalResolv as Resolv
+from serviceglobals import LocalUnittestServiceGlobals
+from serviceglobals import LocalResolv
 
 class TestDepot(unittest.TestCase):
     def test_min_req_check(self):
@@ -24,7 +24,7 @@ class TestAddDaemonToOnlineDepot(unittest.TestCase):
     depot = None
     service = None
     def setUp(self):
-        self.service = TcdsService(Globals(Resolv()), LocalVarStore())
+        self.service = TcdsService(LocalUnittestServiceGlobals(LocalResolv()), LocalVarStore())
         self.depot = self.service.create_depot('test_depot', 3)
         host = str(uuid.uuid4())
         node_list = [{'uuid': str(uuid.uuid4()), 'type': 'mon', 'host': host}]
@@ -52,7 +52,7 @@ class TestAddDaemonToOnlineDepot(unittest.TestCase):
 class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
     depot = None
     def setUp(self):
-        service = TcdsService(Globals(Resolv()), LocalVarStore())
+        service = TcdsService(LocalUnittestServiceGlobals(LocalResolv()), LocalVarStore())
         self.depot = service.create_depot('test_depot', 3)
 
     def test_check_ceph_ids_are_consecutive(self):
@@ -74,7 +74,7 @@ class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
 class Test_get_next_ceph_name_for(unittest.TestCase):
     depot = None
     def setUp(self):
-        service = TcdsService(Globals(Resolv()), LocalVarStore())
+        service = TcdsService(LocalUnittestServiceGlobals(LocalResolv()), LocalVarStore())
         self.depot = service.create_depot('test_depot', 3)
 
     def test_get_next_ceph_name_for(self):

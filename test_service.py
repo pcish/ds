@@ -1,66 +1,83 @@
-import service
+import unittest
+import uuid
+from service import TcdsService
+from depot import Depot
+from daemon import Mon, Mds, Osd
+from varstore import LocalVarStore
+from serviceglobals import LocalUnittestServiceGlobals
+from serviceglobals import LocalResolv
+
+class TestCreateDepot(unittest.TestCase):
+    service = None
+    def setUp(self):
+        resolv = LocalResolv()
+        resolv.mapping['0895d363-2972-4c40-9f5b-0df2b224a2c6'] = '10.0.0.1'
+        resolv.mapping['a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a'] = '10.0.0.2'
+        resolv.mapping['92144222-e7b6-4c13-aeb8-7a32cd2c6458'] = '10.0.0.3'
+        resolv.mapping['f97f46ee-7d40-4385-b9a0-7b46079d699b'] = '10.0.0.4'
+        resolv.mapping['c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e'] = '10.0.0.5'
+        resolv.mapping['f0797c41-b21f-4eda-8093-32285453d035'] = '10.0.0.6'
+        resolv.mapping['f8511822-1520-41a8-8638-6dca4c074b65'] = '10.0.0.7'
+        self.service = TcdsService(LocalUnittestServiceGlobals(resolv), LocalVarStore())
+
+    def test_create_depot(self):
+        depot_id = str(uuid.uuid4())
+        replication = 3
+        depot = self.service.create_depot(depot_id, replication)
+        self.assertEquals(depot.uuid, depot_id)
+        self.assertEquals(depot.var.get_depot_replication_factor(depot), replication)
+
+        daemon_spec_list = []
+        daemon_spec_list.append({'type': 'mon', 'host': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'osd', 'host': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'mon', 'host': 'a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'osd', 'host': 'a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'mon', 'host': '92144222-e7b6-4c13-aeb8-7a32cd2c6458', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'osd', 'host': '92144222-e7b6-4c13-aeb8-7a32cd2c6458', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'mds', 'host': 'f97f46ee-7d40-4385-b9a0-7b46079d699b', 'uuid': str(uuid.uuid4())})
+        daemon_spec_list.append({'type': 'mds', 'host': 'c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e', 'uuid': str(uuid.uuid4())})
+        self.service.add_daemons_to_depot(depot_id, daemon_spec_list)
+
+        daemons = self.service._depot_map[depot_id].get_daemon_list()
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mon')), 3)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('osd')), 3)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mds')), 2)
+
+        self.service.service_globals.clear_shell_commands()
+        daemon_spec_list_m = []
+        daemon_spec_list_m.append({'type': 'mon', 'host': 'f8511822-1520-41a8-8638-6dca4c074b65', 'uuid': str(uuid.uuid4())})
+        self.service.add_daemons_to_depot(depot_id, daemon_spec_list_m)
+        print self.service.service_globals.shell_commands
+        self.assertTrue('ceph -c %s.conf mon add 3 10.0.0.7:6789' % depot_id in self.service.service_globals.shell_commands)
+
+        self.service.service_globals.clear_shell_commands()
+        daemon_spec_list_o = []
+        daemon_spec_list_o.append({'type': 'osd', 'host': 'f0797c41-b21f-4eda-8093-32285453d035', 'uuid': str(uuid.uuid4())})
+        self.service.add_daemons_to_depot(depot_id, daemon_spec_list_o)
+        print self.service.service_globals.shell_commands
+
+        node_list = []
+        for daemon_spec in daemon_spec_list:
+            node_list.append({'node_id': daemon_spec['host']})
+        self.service.del_nodes_from_depot(depot_id, node_list, False)
+        daemons = self.service._depot_map[depot_id].get_daemon_list()
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mon')), 4)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('osd')), 4)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mds')), 2)
+
+        self.service.del_nodes_from_depot(depot_id, node_list, True)
+        daemons = self.service._depot_map[depot_id].get_daemon_list()
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mon')), 1)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('osd')), 1)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mds')), 0)
+
+        self.service.add_daemons_to_depot(depot_id, daemon_spec_list)
+        daemons = self.service._depot_map[depot_id].get_daemon_list()
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mon')), 4)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('osd')), 4)
+        self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mds')), 2)
+
+        self.assertTrue(self.service._depot_map[depot_id]._check_ceph_ids_are_consecutive())
 
 if __name__ == '__main__':
-    try:
-        res = service.createDepot({'replication_number': 2,})
-        print res
-        did = res['depot_id']
-    except Exception as e:
-        #print res['error_message']
-        print e
-    try:
-        info = service.getDepotInfo({'depot_id': 'i bet this id does not exist'})['depot_info']
-    except:
-        pass
-    else:
-        assert(0)
-    try:
-        info = service.getDepotInfo({'depot_id': did})
-    except Exception, e:
-        print e
-    else:
-        print info
-
-    service._service.service_globals.resolv.mapping['0895d363-2972-4c40-9f5b-0df2b224a2c6'] = '10.0.0.1'
-    service._service.service_globals.resolv.mapping['a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a'] = '10.0.0.2'
-    service._service.service_globals.resolv.mapping['92144222-e7b6-4c13-aeb8-7a32cd2c6458'] = '10.0.0.3'
-    service._service.service_globals.resolv.mapping['f97f46ee-7d40-4385-b9a0-7b46079d699b'] = '10.0.0.4'
-    service._service.service_globals.resolv.mapping['c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e'] = '10.0.0.5'
-    service._service.service_globals.resolv.mapping['f0797c41-b21f-4eda-8093-32285453d035'] = '10.0.0.6'
-    print service.addStorageNodes({
-        'depot_id': did,
-        'node_spec_list': [
-            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon', 'osd' ] },
-            { 'node_id': 'a0e6fbf4-e6d2-4a7a-97d3-9390703d6b3a', 'storage_roles': [ 'mon', 'osd' ] },
-            { 'node_id': '92144222-e7b6-4c13-aeb8-7a32cd2c6458', 'storage_roles': [ 'mon', 'osd' ] },
-            { 'node_id': 'f97f46ee-7d40-4385-b9a0-7b46079d699b', 'storage_roles': [ 'mds' ] },
-            { 'node_id': 'c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e', 'storage_roles': [ 'mds' ] },
-        ]
-    })
-
-    daemons = service._service._depot_map[did].get_daemon_list()
-    for daemon in daemons:
-        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
-    print '--------------'
-    print service.removeStorageNodes({
-        'depot_id': did,
-        'node_list': [
-            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6'}
-        ],
-        'force': True
-    })
-    daemons = service._service._depot_map[did].get_daemon_list()
-    for daemon in daemons:
-        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
-    print '--------------'
-    service.addStorageNodes({
-        'depot_id': did,
-        'node_spec_list': [
-            { 'node_id': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'storage_roles': [ 'mon' ]},
-            { 'node_id': 'f0797c41-b21f-4eda-8093-32285453d035', 'storage_roles': [ 'osd' ]}
-        ]
-    })
-    daemons = service._service._depot_map[did].get_daemon_list()
-    for daemon in daemons:
-        print daemon.get_host_id(), daemon.TYPE, daemon.get_ceph_name()
-    print service._service._depot_map[did].config
+    unittest.main()

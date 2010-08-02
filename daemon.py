@@ -54,10 +54,18 @@ class Daemon(object):
         self.conf_file_path = '%s.conf' % config.get('tcloud', 'depot')
         self.config = config
 
-    def setup(self):
+    def write_config(self):
+        tmp_file_path = '/tmp/%s.conf' % self.config.get('tcloud', 'depot')
+        with open(tmp_file_path, 'wb') as tmp_file:
+            self.config.write(tmp_file)
+        cmd = 'scp %s %s:%s' % (tmp_file_path, self.get_host_ip(), self.conf_file_path)
+        self.depot.service_globals.run_shell_command(cmd)
+
+    def setup(self, config):
         pass
 
     def activate(self):
+        self.write_config()
         cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
@@ -84,17 +92,19 @@ class Osd(Daemon):
     def add_to_config(self, config):
         config.add_osd(self, self.get_host_ip())
 
-    def setup(self):
+    def setup(self, config):
+        self.set_config(config)
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd data')),)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd journal')),)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
-        # get a copy of monmap
+        self.write_config()
+        # get a copy of the monmap
         cmd = 'ceph -c %s mon getmap -o /tmp/monmap' % (self.conf_file_path,)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
-        # formatting new osd
+        # format the new osd data dir
         cmd = '"cosd -c %s -i %s --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_name())
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
@@ -114,11 +124,12 @@ class Mon(Daemon):
     def add_to_config(self, config):
         config.add_mon(self, self.get_host_ip())
 
-    def setup(self):
+    def setup(self, config):
+        self.set_config(config)
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
-        # copy mon dir from an existing to the new monitor
+        # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
         cmd = 'scp -r %s:%s/mon%s %s:%s' %  \
                 (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,

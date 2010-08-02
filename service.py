@@ -1,8 +1,8 @@
 import uuid
 from depot import Depot
-from varstore import LocalVarStore as VariableStore
-from serviceglobals import LocalDebugServiceGlobals as Globals
-from serviceglobals import LocalResolv as Resolv
+from varstore import TcdbVarStore as VariableStore
+from serviceglobals import TcServiceGlobals as Globals
+from serviceglobals import TcdbResolv as Resolv
 
 class TcdsService(object):
     _depot_map = {}

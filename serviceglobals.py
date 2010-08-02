@@ -49,10 +49,11 @@ class TcServiceGlobals(ServiceGlobals):
     logger = None
     def __init__(self, resolv):
         ServiceGlobals.__init__(self, resolv)
-        #logger = TCLog('tcdsService')
+        exec 'from tcloud.util.logger import TCLog'
+        self.logger = TCLog('tcdsService')
 
     def dout(self, level, message):
-        logger.log(level, message)
+        self.logger.log(level, message)
 
     def error_code(self, errorno):
         if errorno == self.SUCCESS:

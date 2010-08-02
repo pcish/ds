@@ -3,7 +3,7 @@ import os
 import copy
 
 from tccephconf import TCCephConf
-from daemon import Mon, Mds, Osd
+from daemon import Mon, Mds, Osd, Daemon
 
 class OsdGroup(list):
     TYPE = ''
@@ -37,7 +37,6 @@ class Depot(object):
         self.config_file_path = '%s.conf' % self.uuid
         self.config = TCCephConf()
         self.config.create_default(self.uuid)
-        print "new depot"
         return True
 
     def __del__(self): pass
@@ -187,10 +186,12 @@ class Depot(object):
         daemon_list = self.get_daemon_list(daemon_type)
         in_use_names = []
         for daemon in daemon_list:
-            in_use_names.append(daemon.get_ceph_name())
+            daemon_name = daemon.get_ceph_name()
+            if daemon_name.isdigit():
+                in_use_names.append(daemon_name)
         in_use_names.sort()
         for i in range(len(in_use_names)):
-            if in_use_names[i] != i:
+            if in_use_names[i].isdigit() and int(in_use_names[i]) != i:
                 return i
         return len(in_use_names)
 
@@ -199,8 +200,10 @@ class Depot(object):
         daemon_list.sort(Mon.cmp_name)
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
         for daemon in daemon_list:
-
-            if next_id[daemon.TYPE] == daemon.get_ceph_name():
+            daemon_name = daemon.get_ceph_name()
+            if not daemon_name.isdigit():
+                continue
+            if next_id[daemon.TYPE] == int(daemon_name):
                 next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
             else:
                 return False

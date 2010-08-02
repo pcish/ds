@@ -63,8 +63,13 @@ class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
         daemon_list = self.depot.get_daemon_list()
         for daemon in daemon_list:
             if daemon.get_uuid() == node_uuid:
-                daemon.set_ceph_name(2)
+                daemon.set_ceph_name(1)
+                break
         self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), False)
+        node_uuid = str(uuid.uuid4())
+        node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
+        self.depot.add_daemons(node_list)
+        self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), True)
 
 class Test_get_next_ceph_name_for(unittest.TestCase):
     depot = None
@@ -79,6 +84,13 @@ class Test_get_next_ceph_name_for(unittest.TestCase):
         node_uuid = str(uuid.uuid4())
         node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
         self.depot.add_daemons(node_list)
+        self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)
+        self.assertEquals(self.depot._get_next_ceph_name_for('mds'), 0)
+        self.assertEquals(self.depot._get_next_ceph_name_for('osd'), 1)
+        node_uuid = str(uuid.uuid4())
+        node_list = [{'uuid': node_uuid, 'type': 'osd', 'host': ''}]
+        (daemon,) = self.depot.add_daemons(node_list)
+        daemon.set_ceph_name('!')
         self.assertEquals(self.depot._get_next_ceph_name_for('mon'), 0)
         self.assertEquals(self.depot._get_next_ceph_name_for('mds'), 0)
         self.assertEquals(self.depot._get_next_ceph_name_for('osd'), 1)

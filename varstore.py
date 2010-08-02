@@ -1,8 +1,6 @@
 import inspect
 
 class VarStore(object):
-    def __init__(self): print "new varstore"
-
     def add_depot(self, depot):
         self._virtual_function()
 
@@ -234,7 +232,7 @@ class LocalVarStore(VarStore):
     def add_daemon(self, daemon, uuid, host, ceph_name):
         daemon.depot._localvars['daemons'][uuid] = daemon
         daemon._localvars['host'] = host
-        daemon._localvars['ceph_name'] = ceph_name
+        daemon._localvars['ceph_name'] = str(ceph_name)
 
     def remove_daemon(self, daemon):
         del daemon.depot._localvars['daemons'][daemon.uuid]
@@ -257,7 +255,7 @@ class LocalVarStore(VarStore):
         return daemon._localvars['host']
 
     def set_daemon_ceph_name(self, daemon, ceph_name):
-        daemon._localvars['ceph_name'] = ceph_name
+        daemon._localvars['ceph_name'] = str(ceph_name)
 
     def get_daemon_ceph_name(self, daemon):
         return daemon._localvars['ceph_name']

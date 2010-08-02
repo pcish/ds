@@ -20,7 +20,6 @@ class Daemon(object):
 
     @staticmethod
     def cmp_name(self, other):
-        print inspect.stack()[1][3]
         if self.TYPE == other.TYPE:
             self_name = self.get_ceph_name()
             other_name = other.get_ceph_name()
@@ -82,7 +81,7 @@ class Osd(Daemon):
     DAEMON_NAME = 'cosd'
     TYPE = 'osd'
     def getDaemonArgs(self):
-        return '%s -i %d' % (super().getDaemonArgs(), self.get_ceph_name())
+        return '%s -i %s' % (super().getDaemonArgs(), self.get_ceph_name())
 
     def add_to_config(self, config):
         config.add_osd(self, self.get_host_ip())
@@ -98,7 +97,7 @@ class Osd(Daemon):
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
         # formatting new osd
-        cmd = '"cosd -c %s -i %d --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_name())
+        cmd = '"cosd -c %s -i %s --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_name())
         self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
 
 

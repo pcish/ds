@@ -61,25 +61,8 @@ class CephConfVarStore(VarStore):
 class TcdbVarStore(VarStore):
     conn = None
     def __init__(self):
-        self.connect()
-
-    def connect(self):
-        exec 'import psycopg2'
-        exec 'import tcloud.util.globalconfig as globalconfig'
-        gbConfig = globalconfig.GlobalConfig()
-        conn_string = []
-        options_to_get = {
-            'host': globalconfig.OPTION_DB_IP,
-            'dbname': globalconfig.OPTION_DB_NAME,
-            'user': globalconfig.OPTION_DB_USERNAME,
-            'password': globalconfig.OPTION_DB_PASSWORD
-        }
-        for key, option in options_to_get.items():
-            value = gbConfig.getValue(globalconfig.SECTION_DB, option)
-            if value:
-                conn_string.append('='.join((key, value)))
-        conn_string.append('='.join(('port', '5432')))
-        self.conn = psycopg2.connect(' '.join(conn_string))
+        exec 'from serviceglobals import Tcdb'
+        self.conn = Tcdb.connect()
 
     def add_depot(self, depot, uuid, replication, state):
         cur = self.conn.cursor()

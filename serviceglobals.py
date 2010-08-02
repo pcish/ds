@@ -62,6 +62,26 @@ class TcServiceGlobals(ServiceGlobals):
         else:
             raise ValueError('NormalServiceProfile.error_code: undefined errorno %s' % errorno)
 
+class Tcdb(object):
+    @staticmethod
+    def connect():
+        exec 'import psycopg2'
+        exec 'import tcloud.util.globalconfig as globalconfig'
+        gbConfig = globalconfig.GlobalConfig()
+        conn_string = []
+        options_to_get = {
+            'host': globalconfig.OPTION_DB_IP,
+            'dbname': globalconfig.OPTION_DB_NAME,
+            'user': globalconfig.OPTION_DB_USERNAME,
+            'password': globalconfig.OPTION_DB_PASSWORD
+        }
+        for key, option in options_to_get.items():
+            value = gbConfig.getValue(globalconfig.SECTION_DB, option)
+            if value:
+                conn_string.append('='.join((key, value)))
+        conn_string.append('='.join(('port', '5432')))
+        return psycopg2.connect(' '.join(conn_string))
+
 class Resolv(object):
     def uuid_to_ip(self, uuid): pass
 
@@ -79,25 +99,7 @@ class LocalResolv(Resolv):
 class TcdbResolv(Resolv):
     conn = None
     def __init__(self):
-        self.connect()
-
-    def connect(self):
-        exec 'import psycopg2'
-        exec 'import tcloud.util.globalconfig as globalconfig'
-        gbConfig = globalconfig.GlobalConfig()
-        conn_string = []
-        options_to_get = {
-            'host': globalconfig.OPTION_DB_IP,
-            'dbname': globalconfig.OPTION_DB_NAME,
-            'user': globalconfig.OPTION_DB_USERNAME,
-            'password': globalconfig.OPTION_DB_PASSWORD
-        }
-        for key, option in options_to_get.items():
-            value = gbConfig.getValue(globalconfig.SECTION_DB, option)
-            if value:
-                conn_string.append('='.join((key, value)))
-        conn_string.append('='.join(('port', '5432')))
-        self.conn = psycopg2.connect(' '.join(conn_string))
+        self.conn = Tcdb.connect()
 
     def uuid_to_ip(self, uuid):
         pass

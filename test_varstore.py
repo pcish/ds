@@ -37,6 +37,7 @@ class TestVarStore(unittest.TestCase):
         self.assertRaises(KeyError, self.var.get_depot_state, depot)
         depot.uuid = new_uuidstr
         self.assertEquals(self.var.get_depot_state(depot), depot.CONSTANTS['STATE_OFFLINE'])
+        self.var.del_depot(depot)
 
     def test_set_depot_state(self):
         service = TcdsService(Globals(Resolv()), self.var)
@@ -46,6 +47,7 @@ class TestVarStore(unittest.TestCase):
         self.assertEquals(self.var.get_depot_state(depot), depot.CONSTANTS['STATE_OFFLINE'])
         self.var.set_depot_state(depot, depot.CONSTANTS['STATE_ONLINE'])
         self.assertEquals(self.var.get_depot_state(depot), depot.CONSTANTS['STATE_ONLINE'])
+        self.var.del_depot(depot)
 
     def test_set_depot_replication_factor(self):
         service = TcdsService(Globals(Resolv()), self.var)
@@ -55,6 +57,7 @@ class TestVarStore(unittest.TestCase):
         self.assertEquals(self.var.get_depot_replication_factor(depot), 3)
         self.var.set_depot_replication_factor(depot, 26)
         self.assertEquals(self.var.get_depot_replication_factor(depot), 26)
+        self.var.del_depot(depot)
 
     def test_add_remove_daemon(self):
         service = TcdsService(Globals(Resolv()), self.var)
@@ -70,6 +73,7 @@ class TestVarStore(unittest.TestCase):
         self.assertEquals(self.var.get_daemon_ceph_name(daemon), str(ceph_name))
         self.var.remove_daemons((daemon,))
         self.assertRaises(KeyError, self.var.get_daemon_ceph_name, daemon)
+        self.var.del_depot(depot)
 
     def test_get_depot_daemon_list(self):
         service = TcdsService(Globals(Resolv()), self.var)
@@ -89,6 +93,8 @@ class TestVarStore(unittest.TestCase):
         self.var.add_daemon(daemon2, uuidstr2, host2, ceph_name2)
         self.assertTrue({'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr} in self.var.get_depot_daemon_list(depot))
         self.assertTrue({'type': 'mds', 'host': host2, 'ceph_name': 'b', 'uuid': uuidstr2} in self.var.get_depot_daemon_list(depot))
+        self.var.remove_daemons((daemon, daemon2))
+        self.var.del_depot(depot)
 
     """
     def set_daemon_uuid(self, daemon, uuid):

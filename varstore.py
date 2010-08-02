@@ -1,6 +1,7 @@
 import inspect
 
 class VarStore(object):
+    PERSISTENT = False
     def add_depot(self, depot):
         self._virtual_function()
 
@@ -59,6 +60,7 @@ class CephConfVarStore(VarStore):
     pass
 
 class TcdbVarStore(VarStore):
+    PERSISTENT = True
     conn = None
     def __init__(self):
         exec 'from serviceglobals import Tcdb'

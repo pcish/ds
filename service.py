@@ -11,6 +11,15 @@ class TcdsService(object):
         self._depot_map = {}
         self.service_globals = service_globals
         self.var = varstore
+        if varstore.PERSISTENT:
+            self._load_saved_state()
+
+    def _load_saved_state(self):
+        depot_list = self.var.get_depot_list()
+        for depot in depot_list:
+            depot = Depot(self, depot['uuid'])
+            self._depot_map[depot['uuid']] = depot
+            depot._load_saved_state()
 
     def create_depot(self, depot_id, replication_factor):
         depot = Depot(self, depot_id)

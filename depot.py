@@ -29,6 +29,13 @@ class Depot(object):
         self.service_globals = service.service_globals
         self.var = service.var
 
+    def _load_saved_state(self):
+        daemon_spec_list = self.var.get_depot_daemon_list()
+        for daemon_spec in daemon_spec_list:
+            daemon = _new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
+            self._daemon_map[daemon.uuid] = daemon
+            daemon._load_saved_state()
+
     def setup(self):
         #self.config_file_path = '/etc/ceph/%s.conf' % id
         self.config_file_path = '%s.conf' % self.uuid
@@ -51,22 +58,26 @@ class Depot(object):
         return depot_info
         #TODO get actual usage
 
+    def _new_daemon_instance(self, daemon_type, uuid):
+        if daemon_type == 'mon':
+            return Mon(self, uuid)
+        elif daemon_type == 'mds':
+            return Mds(self, uuid)
+        elif daemon_type == 'osd':
+            return Osd(self, uuid)
+        else:
+            raise ValueError('storage_roles should be one of mon, mds, osd')
+
     def add_daemons(self, daemon_spec_list):
         new_mons = []
         orig_num_osd = self._get_daemon_count()['num_osd']
         # create daemon instances
         new_daemon_list = []
         for daemon_spec in daemon_spec_list:
-            if daemon_spec['type'] == 'mon':
-                new_daemon = Mon(self, daemon_spec['uuid'])
-                new_mons.append(new_daemon)
-            elif daemon_spec['type'] == 'mds':
-                new_daemon = Mds(self, daemon_spec['uuid'])
-            elif daemon_spec['type'] == 'osd':
-                new_daemon = Osd(self, daemon_spec['uuid'])
-            else:
-                raise ValueError('storage_roles should be one of mon, mds, osd')
+            new_daemon = _new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
             new_daemon_list.append(new_daemon)
+            if new_daemon.TYPE == 'mon':
+                new_mons.append(new_daemon)
             new_ceph_name = self._get_next_ceph_name_for(new_daemon.TYPE)
             self.var.add_daemon(new_daemon, daemon_spec['uuid'], daemon_spec['host'], new_ceph_name)
             self._daemon_map[daemon_spec['uuid']] = new_daemon

@@ -126,7 +126,7 @@ class TcdbVarStore(VarStore):
 
     def remove_daemon(self, daemon):
         cur = self.conn.cursor()
-        cur.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
+        cur.execute('delete from "TCDS_NODE" where "DEPOT_ID"=%s and "ID"=%s',
             (daemon.depot.uuid, daemon.uuid))
         self.conn.commit()
         cur.close()
@@ -134,7 +134,7 @@ class TcdbVarStore(VarStore):
     def remove_daemons(self, daemon_list):
         cur = self.conn.cursor()
         for daemon in daemon_list:
-            cur.execute('delete from "TCDS_NODE" where "DEPOT_ID" = %s and "ID" = %s',
+            cur.execute('delete from "TCDS_NODE" where "DEPOT_ID"=%s and "ID"=%s',
                 (daemon.depot.uuid, daemon.uuid))
         self.conn.commit()
         cur.close()
@@ -148,7 +148,7 @@ class TcdbVarStore(VarStore):
         ret_list = []
         for daemon in rows:
             if type == 'all' or _daemon_int_to_type(daemon[3]) == type:
-                ret_list.append({'uuid': daemon[0], 'type': _daemon_int_to_type(daemon[3]), 'host': daemon[1], 'ceph_name': daemon[2]})
+                ret_list.append({'uuid': daemon[0], 'type': self._daemon_int_to_type(daemon[3]), 'host': daemon[1], 'ceph_name': daemon[2]})
         return ret_list
 
     def set_daemon_uuid(self, daemon, uuid):
@@ -167,7 +167,7 @@ class TcdbVarStore(VarStore):
 
     def get_daemon_host(self, daemon):
         cur = self.conn.cursor()
-        cur.execute('select "SERVER_ID" from "TCDS_NODE" where "ID" = %s',
+        cur.execute('select "SERVER_ID" from "TCDS_NODE" where "ID"=%s',
             (daemon.uuid,))
         row = cur.fetchone()
         cur.close()
@@ -186,8 +186,11 @@ class TcdbVarStore(VarStore):
         cur = self.conn.cursor()
         cur.execute('select "CEPH_ID" from "TCDS_NODE" where "ID"=%s',
             (daemon.uuid,))
-        self.conn.commit()
+        row = cur.fetchone()
         cur.close()
+        if row is None:
+            raise KeyError
+        return row[0]
 
     def _daemon_type_to_int(self, daemon_type):
         return {'mon': 0, 'mds': 1, 'osd': 2}[daemon_type]

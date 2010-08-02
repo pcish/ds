@@ -117,6 +117,16 @@ class TcdbVarStore(VarStore):
             raise KeyError
         return int(row[0])
 
+    def get_depot_list(self):
+        cur = self.conn.cursor()
+        cur.execute('select "ID", "REPLICATION", "STATE" from "TCDS_DEPOT"')
+        rows = cur.fetchall()
+        cur.close()
+        ret_list = []
+        for depot in rows:
+            ret_list.append({'uuid': depot[0], 'replication_factor': depot[1], 'state': depot[2]})
+        return ret_list
+
     def add_daemon(self, daemon, uuid, host, ceph_name):
         cur = self.conn.cursor()
         cur.execute('insert into "TCDS_NODE" values (%s, %s, %s, %s, %s)',
@@ -231,6 +241,12 @@ class LocalVarStore(VarStore):
 
     def get_depot_replication_factor(self, depot):
         return depot.service._localvars['depots'][depot.uuid]._localvars['replication']
+
+    def get_depot_list(self):
+        ret_list = []
+        for uuid, depot in service._localvars['depots'].items():
+            ret_list.append({'uuid': uuid, 'replication_factor': depot._localvars['replication'], 'state': depot._localvars['state']})
+        return ret_list
 
     def add_daemon(self, daemon, uuid, host, ceph_name):
         daemon.depot._localvars['daemons'][uuid] = daemon

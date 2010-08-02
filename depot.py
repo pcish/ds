@@ -30,7 +30,7 @@ class Depot(object):
         self.var = service.var
 
     def _load_saved_state(self):
-        daemon_spec_list = self.var.get_depot_daemon_list()
+        daemon_spec_list = self.get_daemon_list()
         for daemon_spec in daemon_spec_list:
             daemon = _new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
             self._daemon_map[daemon.uuid] = daemon

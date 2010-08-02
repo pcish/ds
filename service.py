@@ -16,9 +16,9 @@ class TcdsService(object):
 
     def _load_saved_state(self):
         depot_list = self.var.get_depot_list()
-        for depot in depot_list:
-            depot = Depot(self, depot['uuid'])
-            self._depot_map[depot['uuid']] = depot
+        for depot_spec in depot_list:
+            depot = Depot(self, depot_spec['uuid'])
+            self._depot_map[depot_spec['uuid']] = depot
             depot._load_saved_state()
 
     def create_depot(self, depot_id, replication_factor):

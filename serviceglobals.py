@@ -1,4 +1,5 @@
 import subprocess
+import logging
 
 class ServiceUtils(object):
     SUCCESS = 0

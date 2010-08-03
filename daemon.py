@@ -19,7 +19,7 @@ class Daemon(object):
         self.utils = depot.utils
 
     def _load_saved_state(self):
-        pass
+        self.conf_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX, '%s.conf' % self.depot.uuid)
 
     @staticmethod
     def cmp_name(self, other):

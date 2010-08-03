@@ -5,6 +5,7 @@ import inspect
 class Daemon(object):
     depot = None
     uuid = None
+    utils = None
 
     DAEMON_NAME = None
     conf_file_path = None
@@ -15,6 +16,7 @@ class Daemon(object):
     def __init__(self, depot, uuid):
         self.depot = depot
         self.uuid = uuid
+        self.utils = depot.utils
 
     def _load_saved_state(self):
         pass
@@ -41,7 +43,7 @@ class Daemon(object):
         return self.depot.var.get_daemon_host(self)
 
     def get_host_ip(self):
-        return self.depot.service.service_globals.resolv.uuid_to_ip(self.get_host_id())
+        return self.utils.resolv.uuid_to_ip(self.get_host_id())
 
     def set_ceph_name(self, name):
         self.depot.var.set_daemon_ceph_name(self, name)
@@ -54,7 +56,7 @@ class Daemon(object):
         config.del_daemon(self)
 
     def set_config(self, config):
-        self.conf_file_path = os.path.join(self.depot.service_globals.CONFIG_FILE_PATH_PREFIX, '%s.conf' % config.get('tcloud', 'depot'))
+        self.conf_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX, '%s.conf' % config.get('tcloud', 'depot'))
         self.config = config
 
     def write_config(self):
@@ -62,7 +64,7 @@ class Daemon(object):
         with open(tmp_file_path, 'wb') as tmp_file:
             self.config.write(tmp_file)
         cmd = 'scp %s %s:%s' % (tmp_file_path, self.get_host_ip(), self.conf_file_path)
-        self.depot.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
 
     def setup(self, config):
         pass
@@ -70,14 +72,14 @@ class Daemon(object):
     def activate(self):
         self.write_config()
         cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def status(self):
         pass
 
     def deactivate(self):
         cmd = "%s -c %s --hostname %s stop %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def clean(self):
         pass
@@ -98,18 +100,18 @@ class Osd(Daemon):
     def setup(self, config):
         self.set_config(config)
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd data')),)
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd journal')),)
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         self.write_config()
         # get a copy of the monmap
         cmd = 'ceph -c %s mon getmap -o /tmp/monmap' % (self.conf_file_path,)
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         # format the new osd data dir
         cmd = '"cosd -c %s -i %s --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_name())
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
 
 class Mds(Daemon):
@@ -130,7 +132,7 @@ class Mon(Daemon):
     def setup(self, config):
         self.set_config(config)
         cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)
-        self.depot.service_globals.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
@@ -138,10 +140,10 @@ class Mon(Daemon):
                 (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
                 self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
                 )
-        self.depot.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
 
     def deactivate(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_name())
-        self.depot.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
 
 

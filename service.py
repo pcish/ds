@@ -3,10 +3,10 @@ from depot import Depot
 
 class TcdsService(object):
     _depot_map = {}
-    service_globals = None
-    def __init__(self, service_globals, varstore):
+    utils = None
+    def __init__(self, utils, varstore):
         self._depot_map = {}
-        self.service_globals = service_globals
+        self.utils = utils
         self.var = varstore
         if varstore.PERSISTENT:
             self._load_saved_state()

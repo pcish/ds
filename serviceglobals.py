@@ -1,6 +1,6 @@
 import subprocess
 
-class ServiceGlobals(object):
+class ServiceUtils(object):
     SUCCESS = 0
     ERROR_GENERAL = 1
     resolv = None
@@ -14,7 +14,7 @@ class ServiceGlobals(object):
     def run_remote_command(self, remote_host, command): pass
 
 
-class LocalDebugServiceGlobals(ServiceGlobals):
+class LocalDebugServiceUtils(ServiceUtils):
     def dout(self, level, message):
         print message
 
@@ -27,11 +27,11 @@ class LocalDebugServiceGlobals(ServiceGlobals):
     def run_remote_command(self, remote_host, command):
         print 'ssh %s %s' % (remote_host, command)
 
-class LocalUnittestServiceGlobals(ServiceGlobals):
+class LocalUnittestServiceUtils(ServiceUtils):
     shell_commands = None
 
     def __init__(self, resolv):
-        ServiceGlobals.__init__(self, resolv)
+        ServiceUtils.__init__(self, resolv)
         self.shell_commands = []
 
     def dout(self, level, message):
@@ -49,12 +49,12 @@ class LocalUnittestServiceGlobals(ServiceGlobals):
     def clear_shell_commands(self):
         self.shell_commands = []
 
-class TcServiceGlobals(ServiceGlobals):
+class TcServiceUtils(ServiceUtils):
     logger = None
     CONFIG_FILE_PATH_PREFIX = '/etc/ceph'
     error_code_map = None
     def __init__(self, resolv):
-        ServiceGlobals.__init__(self, resolv)
+        ServiceUtils.__init__(self, resolv)
         exec 'from tcloud.util.logger import TCLog'
         self.logger = TCLog('tcdsService')
         exec 'from tcloud.util.errorcode import TC_DISTRIBUTED_STORAGE_ERROR, TC_SUCCESS'

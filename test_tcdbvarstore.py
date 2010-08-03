@@ -5,7 +5,7 @@ from varstore import *
 from service import TcdsService
 from depot import Depot
 from daemon import Mon
-from serviceglobals import TcServiceGlobals as Globals
+from serviceglobals import TcServiceUtils as Globals
 from serviceglobals import TcdbResolv as Resolv
 
 

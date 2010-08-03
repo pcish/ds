@@ -4,7 +4,7 @@ from service import TcdsService
 from depot import Depot
 from daemon import Mon, Mds, Osd
 from varstore import LocalVarStore
-from serviceglobals import LocalUnittestServiceGlobals
+from serviceglobals import LocalUnittestServiceUtils
 from serviceglobals import LocalResolv
 
 class TestCreateDepot(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestCreateDepot(unittest.TestCase):
         resolv.mapping['c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e'] = '10.0.0.5'
         resolv.mapping['f0797c41-b21f-4eda-8093-32285453d035'] = '10.0.0.6'
         resolv.mapping['f8511822-1520-41a8-8638-6dca4c074b65'] = '10.0.0.7'
-        self.service = TcdsService(LocalUnittestServiceGlobals(resolv), LocalVarStore())
+        self.service = TcdsService(LocalUnittestServiceUtils(resolv), LocalVarStore())
 
     def test_create_depot(self):
         depot_id = str(uuid.uuid4())
@@ -43,18 +43,18 @@ class TestCreateDepot(unittest.TestCase):
         self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('osd')), 3)
         self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mds')), 2)
 
-        self.service.service_globals.clear_shell_commands()
+        self.service.utils.clear_shell_commands()
         daemon_spec_list_m = []
         daemon_spec_list_m.append({'type': 'mon', 'host': 'f8511822-1520-41a8-8638-6dca4c074b65', 'uuid': str(uuid.uuid4())})
         self.service.add_daemons_to_depot(depot_id, daemon_spec_list_m)
-        print self.service.service_globals.shell_commands
-        self.assertTrue('ceph -c %s.conf mon add 3 10.0.0.7:6789' % depot_id in self.service.service_globals.shell_commands)
+        print self.service.utils.shell_commands
+        self.assertTrue('ceph -c %s.conf mon add 3 10.0.0.7:6789' % depot_id in self.service.utils.shell_commands)
 
-        self.service.service_globals.clear_shell_commands()
+        self.service.utils.clear_shell_commands()
         daemon_spec_list_o = []
         daemon_spec_list_o.append({'type': 'osd', 'host': 'f0797c41-b21f-4eda-8093-32285453d035', 'uuid': str(uuid.uuid4())})
         self.service.add_daemons_to_depot(depot_id, daemon_spec_list_o)
-        print self.service.service_globals.shell_commands
+        print self.service.utils.shell_commands
 
         node_list = []
         for daemon_spec in daemon_spec_list:

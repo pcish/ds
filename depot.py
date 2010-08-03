@@ -13,7 +13,7 @@ class Depot(object):
     uuid = None
     _daemon_map = None
     service = None
-    service_globals = None
+    utils = None
     var = None
     CONSTANTS = {
         'STATE_OFFLINE': 0,
@@ -26,9 +26,9 @@ class Depot(object):
         self.service = service
         self.uuid = uuid
         self._daemon_map = {}
-        self.service_globals = service.service_globals
+        self.utils = service.utils
         self.var = service.var
-        self.config_file_path = os.path.join(self.service_globals.CONFIG_FILE_PATH_PREFIX, '%s.conf' % self.uuid)
+        self.config_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX, '%s.conf' % self.uuid)
 
     def _load_saved_state(self):
         daemon_spec_list = self.var.get_depot_daemon_list(self)
@@ -54,7 +54,7 @@ class Depot(object):
             'depot_replication': self.var.get_depot_replication_factor(self),
             'depot_state': ['not ready', 'ready'][self.var.get_depot_state(self)]
         }
-        libceph = self.service_globals.get_libceph(self.config_file_path)
+        libceph = self.utils.get_libceph(self.config_file_path)
         if libceph is None:
             depot_info['depot_capacity'] = 0
             depot_info['depot_usage'] = 0
@@ -93,7 +93,7 @@ class Depot(object):
             if Depot._get_meets_min_requirements(replication=self.var.get_depot_replication_factor(self), **daemon_count):
                 self.activate()
             else:
-                self.service_globals.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_depot_replication_factor(self)))
+                self.utils.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_depot_replication_factor(self)))
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
             old_config = copy.deepcopy(self.config)
             old_config_str = '%s' % old_config
@@ -108,17 +108,17 @@ class Depot(object):
                 for daemon in new_mons:
                     # add monitor to the mon map
                     cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_name(), daemon.get_host_ip())
-                    self.service_globals.run_shell_command(cmd)
+                    self.utils.run_shell_command(cmd)
             num_osd = self._get_daemon_count()['num_osd']
             if num_osd > orig_num_osd:
                 # set max osd
                 cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
-                self.service_globals.run_shell_command(cmd)
+                self.utils.run_shell_command(cmd)
 
                 # update crush map
                 new_crushmap = self._generate_crushmap()
                 cmd = 'ceph osd setcrushmap -i %s' % new_crushmap
-                self.service_globals.run_shell_command(cmd)
+                self.utils.run_shell_command(cmd)
 
             for daemon in new_daemon_list:
                 daemon.activate()
@@ -128,7 +128,7 @@ class Depot(object):
     def _generate_crushmap(self):
         num_osd = self._get_daemon_count()['num_osd']
         cmd = 'osdmaptool --createsimple %s --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (num_osd,)
-        self.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
         return '/tmp/crush.new'
 
     def remove_nodes(self, node_list, force=False):
@@ -181,10 +181,10 @@ class Depot(object):
     def set_replication_factor(self, factor):
         assert self.config_file_path is not None, 'config_file_path not set'
         cmd = "ceph -c %s osd pool set metadata size %s" % (self.config_file_path, factor)
-        self.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
 
         cmd = "ceph -c %s osd pool set data size %s" % (self.config_file_path, factor)
-        self.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
 
     @staticmethod
     def _get_meets_min_requirements(replication, num_mon, num_mds, num_osd):
@@ -254,7 +254,7 @@ class Depot(object):
             daemon.set_config(self.config)
 
         cmd = "mkcephfs -c %s --allhosts" % (self.config_file_path, )
-        self.service_globals.run_shell_command(cmd)
+        self.utils.run_shell_command(cmd)
 
         for daemon in daemon_list:
             daemon.activate()

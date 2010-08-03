@@ -4,7 +4,7 @@ from varstore import *
 from service import TcdsService
 from depot import Depot
 from daemon import Mon, Mds
-from serviceglobals import LocalUnittestServiceGlobals as Globals
+from serviceglobals import LocalUnittestServiceUtils as Globals
 from serviceglobals import LocalResolv as Resolv
 
 class TestVarStore(unittest.TestCase):

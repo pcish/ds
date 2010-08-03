@@ -1,5 +1,7 @@
 import unittest
 import uuid
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))
 from test_varstore import TestVarStore
 from varstore import *
 from service import TcdsService

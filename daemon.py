@@ -102,7 +102,7 @@ class Osd(Daemon):
         config.add_osd(self, self.get_host_ip())
 
     def setup(self, config):
-        super().setup(config)
+        super(Osd, self).setup(config)
         cmd = "mkdir -p %s" % (self.config.get('osd', 'osd data'),)
         cmd = cmd.replace('$id', self.get_ceph_name())
         self.utils.run_remote_command(self.get_host_ip(), cmd)
@@ -135,7 +135,7 @@ class Mon(Daemon):
         config.add_mon(self, self.get_host_ip())
 
     def setup(self, config):
-        super().setup(config)
+        super(Mon, self).setup(config)
 
         # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()

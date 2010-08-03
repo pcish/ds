@@ -1,5 +1,7 @@
 import unittest
 import uuid
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))
 from service import TcdsService
 from depot import Depot
 from daemon import Mon, Mds, Osd
@@ -58,7 +60,7 @@ class TestCreateDepot(unittest.TestCase):
 
         node_list = []
         for daemon_spec in daemon_spec_list:
-            node_list.append({'node_id': daemon_spec['host']})
+            node_list.append(daemon_spec['host'])
         self.service.del_nodes_from_depot(depot_id, node_list, False)
         daemons = self.service._depot_map[depot_id].get_daemon_list()
         self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mon')), 4)

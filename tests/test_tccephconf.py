@@ -1,5 +1,6 @@
 import unittest
-import os
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))
 from tccephconf import *
 
 class TestTCCephConf(unittest.TestCase):

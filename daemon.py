@@ -16,6 +16,9 @@ class Daemon(object):
         self.depot = depot
         self.uuid = uuid
 
+    def _load_saved_state(self):
+        pass
+
     @staticmethod
     def cmp_name(self, other):
         if self.TYPE == other.TYPE:

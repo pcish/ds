@@ -18,7 +18,7 @@ class Depot(object):
     CONSTANTS = {
         'STATE_OFFLINE': 0,
         'STATE_ONLINE': 1,
-        'CONFIG_FILE_PATH_PREFIX': ''
+        'CONFIG_FILE_PATH_PREFIX': '/etc/ceph'
     }
     config_file_path = None
     config = None

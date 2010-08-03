@@ -208,7 +208,7 @@ class TcdbVarStore(VarStore):
         return {'mon': 0, 'mds': 1, 'osd': 2}[daemon_type]
 
     def _daemon_int_to_type(self, type_int):
-        return {'0': 'mon', '1': 'mds', '2': 'osd'}[type_int]
+        return {'0': 'mon', '1': 'mds', '2': 'osd'}[str(type_int)]
 
 
 class _LocalVarStoreList(list):

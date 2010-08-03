@@ -257,5 +257,11 @@ class Depot(object):
             daemon.deactivate()
         self.set_state(self.CONSTANTS['STATE_OFFLINE'])
 
+    def clean(self):
+        for daemon in self.get_daemon_list():
+            daemon.clean()
+        self.var.remove_daemons(self.get_daemon_list())
+        os.remove(self.config_file_path)
+
 
 

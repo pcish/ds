@@ -47,11 +47,48 @@ def createDepot(args):
         replication_number = 3  # default replication number
 
     try:
-        _service.create_depot(NewDepotID, replication_number)
+        depot = _service.create_depot(NewDepotID, replication_number)
     except Exception as e:
         return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse({'depot_id': NewDepotID})
+        if depot is not None:
+            return TcdsApiSuccessResponse({'depot_id': NewDepotID})
+        else:
+            return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'failed to create depot')
+
+def deleteDepot(args):
+    """Takes a depot uuid and deletes the corresponding depot
+
+    @type args:     dict
+    @param args:    'depot_id': uuid string of the depot to delete
+    """
+    try:
+        _service.remove_depot(args['depot_id'])
+    except KeyError:
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
+    except Exception as e:
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+    else:
+        return TcdsApiSuccessResponse()
+
+def getDepotInfoList(args):
+    """ INPUT
+            {}
+
+        OUTPUT
+            depot_info_list
+    """
+    depot_info_list = []
+    for depot_id in _service._depot_map.keys()
+        try:
+            depot_info = _service.query_depot(args['depot_id'])
+        except KeyError:
+            _service.service_globals.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
+        except Exception as e:
+            return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+        else:
+            depot_info_list.append(depot_info['depot_info'])
+    return TcdsApiSuccessResponse({'depot_info_list': depot_info_list})
 
 def getDepotInfo(args):
     """

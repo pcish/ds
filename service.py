@@ -26,7 +26,10 @@ class TcdsService(object):
         return depot
 
     def remove_depot(self, depot_id):
-        pass
+        self._depot_map[depot_id].deactivate()
+        self._depot_map[depot_id].clean()
+        self.var.del_depot(self._depot_map[depot_id])
+        del self._depot_map[depot_id]
 
     def query_depot(self, depot_id):
         depot_info = self._depot_map[depot_id].get_info()
@@ -39,9 +42,4 @@ class TcdsService(object):
     def del_nodes_from_depot(self, depot_id, node_list, force=False):
         self._depot_map[depot_id].remove_nodes(node_list, force)
         return self._depot_map[depot_id].get_info()
-
-    def select_profile(self, profile):
-        if profile == 'normal':
-            self.profile = NormalServiceProfile()
-
 

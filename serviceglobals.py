@@ -1,9 +1,12 @@
+import subprocess
+
 class ServiceGlobals(object):
     SUCCESS = 0
     ERROR_GENERAL = 1
     resolv = None
     def __init__(self, resolv=None):
         self.resolv = resolv
+    def get_libceph(self, config_file_path): return None
     def dout(self, level, message): pass
     def error_code(self, errorno): pass
     def run_shell_command(self, command): pass
@@ -47,21 +50,45 @@ class LocalUnittestServiceGlobals(ServiceGlobals):
 
 class TcServiceGlobals(ServiceGlobals):
     logger = None
+    error_code_map = None
     def __init__(self, resolv):
         ServiceGlobals.__init__(self, resolv)
         exec 'from tcloud.util.logger import TCLog'
         self.logger = TCLog('tcdsService')
+        exec 'from tcloud.util.errorcode import TC_DISTRIBUTED_STORAGE_ERROR, TC_SUCCESS'
+        self.error_code_map = {}
+        self.error_code_map[str(self.SUCCESS)] = TC_SUCCESS
+        self.error_code_map[str(self.ERROR_GENERAL)] = TC_DISTRIBUTED_STORAGE_ERROR
+
+    def get_libceph(self, config_file_path):
+        exec 'from ceph.libceph import LibCeph'
+        libceph = LibCeph(['', '-c', '%s' % config_file_path])
+        return libceph
 
     def dout(self, level, message):
         self.logger.log(level, message)
 
     def error_code(self, errorno):
-        if errorno == self.SUCCESS:
-            return
-        elif errorno == self.ERROR_GENERAL:
-            return
-        else:
+        try:
+            return self.error_code_map[str(errorno)]
+        except KeyError:
             raise ValueError('NormalServiceProfile.error_code: undefined errorno %s' % errorno)
+        except Exception as e:
+            raise TcdsError(str(e))
+
+    def run_shell_command(self, command):
+        pcmd = ['%s' % command]
+        pipe = subprocess.Popen(pcmd, stdout = subprocess.PIPE,
+                stderr = subprocess.PIPE, shell = True)
+        pout = pipe.communicate()
+        if pipe.returncode:
+            raise TcdsError(pout)
+
+    def run_remote_command(self, remote_host, command):
+        self.run_shell_command(''.join(('ssh -o UserKnownHostsFile=/dev/null -t -t ', remote_host, ' "', command, '"')))
+
+class TcdsError(Exception):
+    pass
 
 class Tcdb(object):
     @staticmethod

@@ -53,12 +53,17 @@ class Depot(object):
         depot_info = {
             'depot_id': self.uuid,
             'depot_replication': self.var.get_depot_replication_factor(self),
-            'depot_state': ['not ready', 'ready'][self.var.get_depot_state(self)],
-            'depot_capacity': 0,
-            'depot_usage': 0
+            'depot_state': ['not ready', 'ready'][self.var.get_depot_state(self)]
         }
+        libceph = self.service_globals.get_libceph(self.config_file_path)
+        if libceph is None:
+            depot_info['depot_capacity'] = 0
+            depot_info['depot_usage'] = 0
+        else:
+            (avail, total) = libceph.df()
+            depot_info['depot_capacity'] = total
+            depot_info['depot_usage'] = total - avail
         return depot_info
-        #TODO get actual usage
 
     def _new_daemon_instance(self, daemon_type, uuid):
         if daemon_type == 'mon':

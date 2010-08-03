@@ -88,15 +88,10 @@ class Daemon(object):
     def clean(self):
         pass
 
-    def getDaemonArgs(self):
-        return '-c %s' % self.conf_file_path
-
 
 class Osd(Daemon):
     DAEMON_NAME = 'cosd'
     TYPE = 'osd'
-    def getDaemonArgs(self):
-        return '%s -i %s' % (super().getDaemonArgs(), self.get_ceph_name())
 
     def add_to_config(self, config):
         config.add_osd(self, self.get_host_ip())
@@ -128,8 +123,6 @@ class Mds(Daemon):
 class Mon(Daemon):
     DAEMON_NAME = 'cmon'
     TYPE = 'mon'
-    def getDaemonArgs(self):
-        return '%s -i %s' % (super().getDaemonArgs(), self.get_ceph_name())
 
     def add_to_config(self, config):
         config.add_mon(self, self.get_host_ip())

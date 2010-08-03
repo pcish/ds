@@ -54,7 +54,7 @@ class Daemon(object):
         config.del_daemon(self)
 
     def set_config(self, config):
-        self.conf_file_path = '%s.conf' % config.get('tcloud', 'depot')
+        self.conf_file_path = os.path.join(self.depot.service_globals.CONFIG_FILE_PATH_PREFIX, '%s.conf' % config.get('tcloud', 'depot'))
         self.config = config
 
     def write_config(self):

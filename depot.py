@@ -17,8 +17,7 @@ class Depot(object):
     var = None
     CONSTANTS = {
         'STATE_OFFLINE': 0,
-        'STATE_ONLINE': 1,
-        'CONFIG_FILE_PATH_PREFIX': '/etc/ceph'
+        'STATE_ONLINE': 1
     }
     config_file_path = None
     config = None
@@ -29,7 +28,7 @@ class Depot(object):
         self._daemon_map = {}
         self.service_globals = service.service_globals
         self.var = service.var
-        self.config_file_path = os.path.join(self.CONSTANTS['CONFIG_FILE_PATH_PREFIX'], '%s.conf' % self.uuid)
+        self.config_file_path = os.path.join(self.service_globals.CONFIG_FILE_PATH_PREFIX, '%s.conf' % self.uuid)
 
     def _load_saved_state(self):
         daemon_spec_list = self.var.get_depot_daemon_list(self)
@@ -233,6 +232,13 @@ class Depot(object):
         assert self.config_file_path is not None, 'config_file_path not set'
         with open(self.config_file_path, 'wb') as config_file:
             self.config.write(config_file)
+
+    def update_daemon_configs(self, daemon_list=None):
+        if daemon_list == None:
+            daemon_list = self.get_daemon_list()
+        for daemon in daemon_list:
+            daemon.set_config(self.config)
+            daemon.write_config()
 
     def activate(self):
         if self.get_state() != self.CONSTANTS['STATE_OFFLINE']: return False

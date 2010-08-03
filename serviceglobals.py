@@ -4,6 +4,7 @@ class ServiceGlobals(object):
     SUCCESS = 0
     ERROR_GENERAL = 1
     resolv = None
+    CONFIG_FILE_PATH_PREFIX = ''
     def __init__(self, resolv=None):
         self.resolv = resolv
     def get_libceph(self, config_file_path): return None
@@ -50,6 +51,7 @@ class LocalUnittestServiceGlobals(ServiceGlobals):
 
 class TcServiceGlobals(ServiceGlobals):
     logger = None
+    CONFIG_FILE_PATH_PREFIX = '/etc/ceph'
     error_code_map = None
     def __init__(self, resolv):
         ServiceGlobals.__init__(self, resolv)

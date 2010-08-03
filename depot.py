@@ -60,8 +60,8 @@ class Depot(object):
             depot_info['depot_usage'] = 0
         else:
             (avail, total) = libceph.df()
-            depot_info['depot_capacity'] = total
-            depot_info['depot_usage'] = total - avail
+            depot_info['depot_capacity'] = str(total)
+            depot_info['depot_usage'] = str(total - avail)
         return depot_info
 
     def _new_daemon_instance(self, daemon_type, uuid):

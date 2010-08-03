@@ -99,18 +99,23 @@ class Osd(Daemon):
 
     def setup(self, config):
         self.set_config(config)
-        cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd data')),)
+        cmd = "mkdir -p %s" % (self.config.get('osd', 'osd data'),)
+	cmd = cmd.replace('$id', self.get_ceph_name())
+        print cmd
         self.utils.run_remote_command(self.get_host_ip(), cmd)
         cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd journal')),)
+        print cmd
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         self.write_config()
         # get a copy of the monmap
         cmd = 'ceph -c %s mon getmap -o /tmp/monmap' % (self.conf_file_path,)
+        print cmd
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         # format the new osd data dir
-        cmd = '"cosd -c %s -i %s --mkfs --monmap /tmp/monmap"' % (self.conf_file_path, self.get_ceph_name())
+        cmd = 'cosd -c %s -i %s --mkfs --monmap /tmp/monmap' % (self.conf_file_path, self.get_ceph_name())
+        print cmd
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
 
@@ -131,8 +136,6 @@ class Mon(Daemon):
 
     def setup(self, config):
         self.set_config(config)
-        cmd = 'mkdir -p %s' % (os.path.dirname(self.config.get('mon', 'mon data')),)
-        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
@@ -140,7 +143,12 @@ class Mon(Daemon):
                 (active_mon_ip, os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id,
                 self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
                 )
+        print cmd
         self.utils.run_shell_command(cmd)
+
+        cmd = 'mv %s/mon%s %s/mon%s' % (os.path.dirname(self.config.get('mon', 'mon data')), active_mon_id, os.path.dirname(self.config.get('mon', 'mon data')), self.get_ceph_name())
+        print cmd
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def deactivate(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_name())

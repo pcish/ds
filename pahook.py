@@ -128,7 +128,7 @@ def addStorageNodes(args):
                 daemon_spec_list.append({'type': role, 'host': node['node_id'], 'uuid': str(uuid.uuid4())})
         depot_info = _service.add_daemons_to_depot(args['depot_id'], daemon_spec_list)
     except KeyError, e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot. %s' % e)
+        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot. %s' % str(e))
     except Exception as e:
         return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
     else:

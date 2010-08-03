@@ -97,6 +97,12 @@ class Depot(object):
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
             old_config = copy.deepcopy(self.config)
             old_config_str = '%s' % old_config
+            if len(new_mons) > 0:
+                for daemon in new_mons:
+                    # add monitor to the mon map
+                    cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_name(), daemon.get_host_ip())
+                    self.utils.run_shell_command(cmd)
+                    print cmd
             for daemon in new_daemon_list:
                 daemon.setup(old_config)
             for daemon in new_daemon_list:
@@ -104,11 +110,6 @@ class Depot(object):
             for daemon in new_daemon_list:
                 daemon.set_config(self.config)
 
-            if len(new_mons) > 0:
-                for daemon in new_mons:
-                    # add monitor to the mon map
-                    cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_name(), daemon.get_host_ip())
-                    self.utils.run_shell_command(cmd)
             num_osd = self._get_daemon_count()['num_osd']
             if num_osd > orig_num_osd:
                 # set max osd
@@ -117,7 +118,7 @@ class Depot(object):
 
                 # update crush map
                 new_crushmap = self._generate_crushmap()
-                cmd = 'ceph osd setcrushmap -i %s' % new_crushmap
+                cmd = 'ceph -c %s osd setcrushmap -i %s' % (self.config_file_path, new_crushmap)
                 self.utils.run_shell_command(cmd)
 
             for daemon in new_daemon_list:

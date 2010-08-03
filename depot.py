@@ -136,12 +136,12 @@ class Depot(object):
         daemon_count = self._get_daemon_count()
         remove_pending = []
         processed_nodes = []
-        for node in node_list:
-            if node['node_id'] in processed_nodes: # skip duplicates
+        for node_id in node_list:
+            if node_id in processed_nodes: # skip duplicates
                 continue
-            processed_nodes.append(node['node_id'])
+            processed_nodes.append(node_id)
             for daemon in daemon_list:
-                if daemon.get_host_id() == node['node_id']:
+                if daemon.get_host_id() == node_id:
                     remove_pending.append(daemon)
                     daemon_count['num_'+daemon.TYPE] = daemon_count['num_'+daemon.TYPE] - 1
 

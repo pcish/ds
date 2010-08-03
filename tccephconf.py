@@ -61,7 +61,7 @@ class TCCephConf(ConfigParser.RawConfigParser):
         section_name = self._get_section(daemon)
         self.add_section(section_name)
         self.set(section_name, 'host', '%s' % hostname)
-        self.set(section_name, 'addr', '%s:%s' % (ip, port))
+        self.set(section_name, 'mon addr', '%s:%s' % (ip, port))
 
     def add_mds(self, daemon, hostname):
         section_name = self._get_section(daemon)
@@ -77,7 +77,10 @@ class TCCephConf(ConfigParser.RawConfigParser):
         self.remove_section(self._get_section(daemon))
 
     def _get_section(self, daemon):
-        section_str = '%s.%s' % (daemon.TYPE, daemon.get_ceph_name())
+        if daemon.TYPE == 'osd':
+            section_str = '%s%s' % (daemon.TYPE, daemon.get_ceph_name())
+        else:
+            section_str = '%s.%s' % (daemon.TYPE, daemon.get_ceph_name())
         return section_str
 
     def set_debug_all(self, debug_level):
@@ -92,7 +95,7 @@ class TCCephConf(ConfigParser.RawConfigParser):
         sections.sort()
         for i in range(sections.__len__()):
             if sections[i].startswith('mon.') and sections[i].__len__() > 4:
-                (active_mon_ip, _, _) = self.get(sections[i], 'addr').partition(':')
+                (active_mon_ip, _, _) = self.get(sections[i], 'mon addr').partition(':')
                 break
         return (active_mon_ip, '%s' % sections[i][4:])
 

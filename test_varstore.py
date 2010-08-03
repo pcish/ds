@@ -49,7 +49,7 @@ class TestVarStore(unittest.TestCase):
         self.assertEquals(self.var.get_depot_state(depot), depot.CONSTANTS['STATE_ONLINE'])
         self.var.del_depot(depot)
 
-    def test_set_depot_replication_factor(self):
+    def est_set_depot_replication_factor(self):
         service = TcdsService(Globals(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
@@ -89,10 +89,10 @@ class TestVarStore(unittest.TestCase):
         uuidstr2 = str(uuid.uuid4())
         daemon2 = Mds(depot, uuidstr2)
         host2 = str(uuid.uuid4())
-        ceph_name2 = 'b'
+        ceph_name2 = '2'
         self.var.add_daemon(daemon2, uuidstr2, host2, ceph_name2)
         self.assertTrue({'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr} in self.var.get_depot_daemon_list(depot))
-        self.assertTrue({'type': 'mds', 'host': host2, 'ceph_name': 'b', 'uuid': uuidstr2} in self.var.get_depot_daemon_list(depot))
+        self.assertTrue({'type': 'mds', 'host': host2, 'ceph_name': '2', 'uuid': uuidstr2} in self.var.get_depot_daemon_list(depot))
         self.var.remove_daemons((daemon, daemon2))
         self.var.del_depot(depot)
 

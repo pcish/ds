@@ -160,7 +160,7 @@ class TcdbVarStore(VarStore):
         ret_list = []
         for daemon in rows:
             if type == 'all' or _daemon_int_to_type(daemon[3]) == type:
-                ret_list.append({'uuid': daemon[0], 'type': self._daemon_int_to_type(daemon[3]), 'host': daemon[1], 'ceph_name': daemon[2]})
+                ret_list.append({'uuid': daemon[0], 'type': self._daemon_int_to_type(daemon[3]), 'host': daemon[1], 'ceph_name': str(daemon[2])})
         return ret_list
 
     def set_daemon_uuid(self, daemon, uuid):
@@ -202,7 +202,7 @@ class TcdbVarStore(VarStore):
         cur.close()
         if row is None:
             raise KeyError
-        return row[0]
+        return str(row[0])
 
     def _daemon_type_to_int(self, daemon_type):
         return {'mon': 0, 'mds': 1, 'osd': 2}[daemon_type]

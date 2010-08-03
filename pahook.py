@@ -20,12 +20,12 @@ _service = TcdsService(Globals(Resolv()), VariableStore())
 
 class TcdsApiErrorResponse(dict):
     def __init__(self, code, message):
-        self['result_code'] = _service.service_globals.error_code(code)
+        self['result_code'] = _service.utils.error_code(code)
         self['error_message'] = '%s' % message
 
 class TcdsApiSuccessResponse(dict):
     def __init__(self, additional_fields):
-        self['result_code'] = _service.service_globals.error_code(Globals.SUCCESS)
+        self['result_code'] = _service.utils.error_code(Globals.SUCCESS)
         self.update(additional_fields)
 
 def createDepot(args):
@@ -83,7 +83,7 @@ def getDepotInfoList(args):
         try:
             depot_info = _service.query_depot(args['depot_id'])
         except KeyError:
-            _service.service_globals.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
+            _service.utils.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
         except Exception as e:
             return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
         else:

@@ -132,6 +132,10 @@ class Mon(Daemon):
 
         # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
+        cmd = 'rm -rf %s' % self.config.get('mon', 'mon data').replace('$id', active_mon_id)
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
+        cmd = 'rm -rf %s' % self.config.get('mon', 'mon data').replace('$id', self.get_ceph_name())
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
         cmd = 'scp -r %s:%s %s:%s' %  \
                 (active_mon_ip, self.config.get('mon', 'mon data').replace('$id', active_mon_id),
                 self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))

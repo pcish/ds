@@ -149,12 +149,14 @@ class Depot(object):
 
         if force or self._get_meets_min_requirements(replication=self.var.get_depot_replication_factor(self), **daemon_count):
             self._del_daemons(remove_pending)
+            return remove_pending
         else:
             raise TcdsError('remove_nodes: remove aborted because depot daemon count will fall below min requirements')
 
     def _del_daemons(self, daemons_to_remove):
         for daemon in daemons_to_remove:
             daemon.deactivate()
+            daemon.clean()
             daemon.del_from_config(self.config)
             del self._daemon_map[daemon.uuid]
         self.var.remove_daemons(daemons_to_remove)

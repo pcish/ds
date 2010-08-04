@@ -33,7 +33,7 @@ class TcdsApiSuccessResponse(dict):
 def createDepot(args):
     """
     INPUT
-        * replication_number
+        * replication_number (optional)
 
     OUTPUT
         * result_code
@@ -131,13 +131,13 @@ def addStorageNodes(args):
         for node in args['node_spec_list']:
             for role in node['storage_roles']:
                 daemon_spec_list.append({'type': role, 'host': node['node_id'], 'uuid': str(uuid.uuid4())})
-        depot_info = _service.add_daemons_to_depot(args['depot_id'], daemon_spec_list)
+        addedd_daemons_uuids = _service.add_daemons_to_depot(args['depot_id'], daemon_spec_list)
     except KeyError, e:
         return TcdsApiErrorResponse(__utils.ERROR_GENERAL, 'No such depot. %s' % str(e))
     except Exception as e:
         return TcdsApiErrorResponse(__utils.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse({'depot_info': depot_info})
+        return TcdsApiSuccessResponse({'daemons_added': addedd_daemons_uuids})
 
 def removeStorageNodes(args):
     """
@@ -156,10 +156,10 @@ def removeStorageNodes(args):
     if 'force' not in args:
         args['force'] = False
     try:
-        depot_info = _service.del_nodes_from_depot(args['depot_id'], args['node_list'], args['force'])
+        removed_daemons_uuids = _service.del_nodes_from_depot(args['depot_id'], args['node_list'], args['force'])
     except KeyError:
         return TcdsApiErrorResponse(__utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
         return TcdsApiErrorResponse(__utils.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse({'depot_info': depot_info})
+        return TcdsApiSuccessResponse({'daemons_removed': removed_daemons_uuids})

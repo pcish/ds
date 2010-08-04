@@ -36,10 +36,16 @@ class TcdsService(object):
         return depot_info
 
     def add_daemons_to_depot(self, depot_id, daemon_spec_list):
-        self._depot_map[depot_id].add_daemons(daemon_spec_list)
-        return self._depot_map[depot_id].get_info()
+        daemons_added = self._depot_map[depot_id].add_daemons(daemon_spec_list)
+        added_daemons_uuids = []
+        for daemon in daemons_added:
+            added_daemons_uuids.append(daemon.uuid)
+        return added_daemons_uuids
 
     def del_nodes_from_depot(self, depot_id, node_list, force=False):
-        self._depot_map[depot_id].remove_nodes(node_list, force)
-        return self._depot_map[depot_id].get_info()
+        daemons_removed = self._depot_map[depot_id].remove_nodes(node_list, force)
+        removed_daemons_uuids = []
+        for daemon in daemons_removed:
+            removed_daemons_uuids.append(daemon.uuid)
+        return removed_daemons_uuids
 

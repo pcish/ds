@@ -4,6 +4,7 @@ import copy
 
 from cephconf import TCCephConf
 from daemon import Mon, Mds, Osd, Daemon
+from tcdsutils import TcdsError
 
 class OsdGroup(list):
     TYPE = ''
@@ -148,6 +149,8 @@ class Depot(object):
 
         if force or self._get_meets_min_requirements(replication=self.var.get_depot_replication_factor(self), **daemon_count):
             self._del_daemons(remove_pending)
+        else:
+            raise TcdsError('remove_nodes: remove aborted because depot daemon count will fall below min requirements')
 
     def _del_daemons(self, daemons_to_remove):
         for daemon in daemons_to_remove:

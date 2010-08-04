@@ -1,7 +1,7 @@
 import unittest
 import uuid
 import sys, os
-sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from varstore import *
 from service import TcdsService
 from depot import Depot
@@ -117,7 +117,7 @@ class TestVarStore(unittest.TestCase):
         self.assertEquals(self.var.get_daemon_ceph_name(daemon), ceph_name)
         self.var.remove_daemons((daemon,))
         self.var.del_depot(depot)
-    
+
     def test_set_daemon_host(self):
         service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid

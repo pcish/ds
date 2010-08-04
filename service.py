@@ -1,4 +1,3 @@
-import uuid
 from depot import Depot
 
 class TcdsService(object):
@@ -21,7 +20,8 @@ class TcdsService(object):
 
     def create_depot(self, depot_id, replication_factor):
         depot = Depot(self, depot_id)
-        self.var.add_depot(depot, depot_id, replication_factor, depot.CONSTANTS['STATE_OFFLINE'])
+        self.var.add_depot(depot, depot_id, replication_factor, 
+            depot.CONSTANTS['STATE_OFFLINE'])
         depot.setup()
         self._depot_map[depot_id] = depot
         return depot
@@ -43,9 +43,11 @@ class TcdsService(object):
         return added_daemons_uuids
 
     def del_nodes_from_depot(self, depot_id, node_list, force=False):
-        daemons_removed = self._depot_map[depot_id].remove_nodes(node_list, force)
+        daemons_removed = self._depot_map[depot_id].remove_nodes(node_list, 
+            force)
         removed_daemons_uuids = []
         for daemon in daemons_removed:
             removed_daemons_uuids.append(daemon.uuid)
         return removed_daemons_uuids
+
 

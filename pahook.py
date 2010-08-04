@@ -87,7 +87,7 @@ def getDepotInfoList(args):
     depot_info_list = []
     for depot_id in _service._depot_map.keys():
         try:
-            depot_info = _service.query_depot(args['depot_id'])
+            depot_info = _service.query_depot(depot_id)
         except KeyError:
             _service.utils.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
         except Exception as e:

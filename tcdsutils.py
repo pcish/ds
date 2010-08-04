@@ -91,7 +91,7 @@ class TcServiceUtils(ServiceUtils):
         self.error_code_map[str(self.ERROR_GENERAL)] = TC_DISTRIBUTED_STORAGE_ERROR
 
     def get_libceph(self, config_file_path):
-        exec 'from ceph.libceph import LibCeph'
+        exec 'from tcloud.ds.ceph.libceph import LibCeph'
         libceph = LibCeph(['', '-c', '%s' % config_file_path])
         return libceph
 

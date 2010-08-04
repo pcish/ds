@@ -6,8 +6,8 @@ from depot import Depot
 from service import TcdsService
 from daemon import Mon, Mds, Osd
 from varstore import LocalVarStore
-from serviceglobals import LocalUnittestServiceUtils
-from serviceglobals import LocalResolv
+from tcdsutils import LocalUnittestServiceUtils
+from tcdsutils import LocalResolv
 
 class TestDepot(unittest.TestCase):
     def test_min_req_check(self):

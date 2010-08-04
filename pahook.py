@@ -13,8 +13,8 @@ import uuid
 from service import TcdsService
 from depot import Depot
 from varstore import TcdbVarStore as VariableStore
-from serviceglobals import TcServiceUtils as Globals
-from serviceglobals import TcdbResolv as Resolv
+from tcdsutils import TcServiceUtils as Globals
+from tcdsutils import TcdbResolv as Resolv
 
 _service = TcdsService(Globals(Resolv()), VariableStore())
 

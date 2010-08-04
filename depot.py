@@ -2,7 +2,7 @@ import logging
 import os
 import copy
 
-from tccephconf import TCCephConf
+from cephconf import TCCephConf
 from daemon import Mon, Mds, Osd, Daemon
 
 class OsdGroup(list):

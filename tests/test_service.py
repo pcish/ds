@@ -6,8 +6,8 @@ from service import TcdsService
 from depot import Depot
 from daemon import Mon, Mds, Osd
 from varstore import LocalVarStore
-from serviceglobals import LocalUnittestServiceUtils
-from serviceglobals import LocalResolv
+from tcdsutils import LocalUnittestServiceUtils
+from tcdsutils import LocalResolv
 
 class TestCreateDepot(unittest.TestCase):
     service = None

@@ -30,11 +30,11 @@ class ServiceUtils(object):
         host uuid's"""
         return self.__resolv
 
-    __config_file_path_prefix = ''
+    _config_file_path_prefix = ''
     @property
     def CONFIG_FILE_PATH_PREFIX(self):
         """Directory in which the ceph configuration files are stored"""
-        return self.__config_file_path_prefix
+        return self._config_file_path_prefix
 
     def __init__(self, resolv=None):
         self.__resolv = resolv
@@ -91,7 +91,7 @@ class TcServiceUtils(ServiceUtils):
 
     def __init__(self, resolv):
         ServiceUtils.__init__(self, resolv)
-        self.__config_file_path_prefix = '/etc/ceph'
+        self._config_file_path_prefix = '/etc/ceph'
         exec 'from tcloud.util.logger import TCLog'
         self._logger = TCLog('tcdsService')
         exec 'from tcloud.util.errorcode import TC_DISTRIBUTED_STORAGE_ERROR, TC_SUCCESS'

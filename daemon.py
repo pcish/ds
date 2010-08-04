@@ -63,7 +63,7 @@ class Daemon(object):
         tmp_file_path = '/tmp/%s.conf' % self.config.get('tcloud', 'depot')
         with open(tmp_file_path, 'wb') as tmp_file:
             self.config.write(tmp_file)
-        cmd = 'scp %s %s:%s' % (tmp_file_path, self.get_host_ip(), 
+        cmd = 'scp %s %s:%s' % (tmp_file_path, self.get_host_ip(),
             self.conf_file_path)
         self.utils.run_shell_command(cmd)
 
@@ -75,8 +75,10 @@ class Daemon(object):
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def activate(self):
+        cmd = 'service ntpdate start'
+        self.utils.run_remote_command(self.get_host_ip(), cmd)
         self.write_config()
-        cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, 
+        cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT,
             self.conf_file_path, self.get_host_ip(), self.TYPE)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
@@ -84,7 +86,7 @@ class Daemon(object):
         pass
 
     def deactivate(self):
-        cmd = "%s -c %s --hostname %s stop %s" % (self.INIT_SCRIPT, 
+        cmd = "%s -c %s --hostname %s stop %s" % (self.INIT_SCRIPT,
             self.conf_file_path, self.get_host_ip(), self.TYPE)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
@@ -119,10 +121,10 @@ class Osd(Daemon):
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def delete(self):
-        cmd = 'ceph -c %s osd out %s' % (self.conf_file_path, 
+        cmd = 'ceph -c %s osd out %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
-        cmd = 'ceph -c %s osd down %s' % (self.conf_file_path, 
+        cmd = 'ceph -c %s osd down %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
         self.deactivate()
@@ -135,7 +137,7 @@ class Mds(Daemon):
         config.add_mds(self, self.get_host_ip())
 
     def delete(self):
-        cmd = 'ceph -c %s mds stop %s' % (self.conf_file_path, 
+        cmd = 'ceph -c %s mds stop %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
 
@@ -155,24 +157,24 @@ class Mon(Daemon):
             self.config.get('mon', 'mon data').replace('$id', active_mon_id)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
         cmd = 'rm -rf %s' % \
-            self.config.get('mon', 'mon data').replace('$id', 
+            self.config.get('mon', 'mon data').replace('$id',
             self.get_ceph_name())
         self.utils.run_remote_command(self.get_host_ip(), cmd)
         cmd = 'scp -r %s:%s %s:%s' % (
-            active_mon_ip, self.config.get('mon', 'mon data').replace('$id', 
-            active_mon_id), self.get_host_ip(), 
+            active_mon_ip, self.config.get('mon', 'mon data').replace('$id',
+            active_mon_id), self.get_host_ip(),
             os.path.dirname(self.config.get('mon', 'mon data'))
             )
         self.utils.run_shell_command(cmd)
 
         cmd = 'mv %s %s' % (
             self.config.get('mon', 'mon data').replace('$id', active_mon_id),
-            self.config.get('mon', 'mon data').replace('$id', 
+            self.config.get('mon', 'mon data').replace('$id',
             self.get_ceph_name()))
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def delete(self):
-        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, 
+        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
 

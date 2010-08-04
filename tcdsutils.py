@@ -7,6 +7,8 @@ Exports that are for external use:
 """
 import subprocess
 import logging
+import inspect
+import os
 
 class ServiceUtils(object):
     """Base (abstract) class that defines global variables and the
@@ -28,10 +30,11 @@ class ServiceUtils(object):
         host uuid's"""
         return self.__resolv
 
+    __config_file_path_prefix = ''
     @property
     def CONFIG_FILE_PATH_PREFIX(self):
         """Directory in which the ceph configuration files are stored"""
-        return ''
+        return self.__config_file_path_prefix
 
     def __init__(self, resolv=None):
         self.__resolv = resolv
@@ -40,11 +43,14 @@ class ServiceUtils(object):
     def error_code(self, errorno): pass
     def run_shell_command(self, command): pass
     def run_remote_command(self, remote_host, command): pass
+    def _format_dout_message(self, message):
+        caller = inspect.stack()[2]
+        return '[%s line %s] %s: %s' % (os.path.basename(caller[1]), caller[2], caller[3], message)
 
 
 class LocalDebugServiceUtils(ServiceUtils):
     def dout(self, level, message):
-        print message
+        print self._format_dout_message(message)
 
     def error_code(self, errorno):
         return errorno
@@ -54,6 +60,7 @@ class LocalDebugServiceUtils(ServiceUtils):
 
     def run_remote_command(self, remote_host, command):
         print 'ssh %s %s' % (remote_host, command)
+
 
 class LocalUnittestServiceUtils(ServiceUtils):
     shell_commands = None
@@ -77,32 +84,33 @@ class LocalUnittestServiceUtils(ServiceUtils):
     def clear_shell_commands(self):
         self.shell_commands = []
 
+
 class TcServiceUtils(ServiceUtils):
-    logger = None
-    CONFIG_FILE_PATH_PREFIX = '/etc/ceph'
-    error_code_map = None
+    _logger = None
+    _error_code_map = None
+
     def __init__(self, resolv):
         ServiceUtils.__init__(self, resolv)
+        self.__config_file_path_prefix = '/etc/ceph'
         exec 'from tcloud.util.logger import TCLog'
-        self.logger = TCLog('tcdsService')
+        self._logger = TCLog('tcdsService')
         exec 'from tcloud.util.errorcode import TC_DISTRIBUTED_STORAGE_ERROR, TC_SUCCESS'
-        self.error_code_map = {}
-        self.error_code_map[str(self.SUCCESS)] = TC_SUCCESS
-        self.error_code_map[str(self.ERROR_GENERAL)] = TC_DISTRIBUTED_STORAGE_ERROR
+        self._error_code_map = {}
+        self._error_code_map[str(self.SUCCESS)] = TC_SUCCESS
+        self._error_code_map[str(self.ERROR_GENERAL)] = TC_DISTRIBUTED_STORAGE_ERROR
 
     def get_libceph(self, config_file_path):
         exec 'from tcloud.ds.ceph.libceph import LibCeph'
-        libceph = LibCeph(['', '-c', '%s' % config_file_path])
-        return libceph
+        return LibCeph(['', '-c', '%s' % config_file_path])
 
     def dout(self, level, message):
-        self.logger.log(level, message)
+        self._logger.log(level, self._format_dout_message(message))
 
     def error_code(self, errorno):
         try:
-            return self.error_code_map[str(errorno)]
+            return self._error_code_map[str(errorno)]
         except KeyError:
-            raise ValueError('NormalServiceProfile.error_code: undefined errorno %s' % errorno)
+            raise ValueError('TcServiceUtils.error_code: undefined errorno %s' % errorno)
         except Exception as e:
             raise TcdsError(str(e))
 
@@ -118,10 +126,13 @@ class TcServiceUtils(ServiceUtils):
     def run_remote_command(self, remote_host, command):
         self.run_shell_command(''.join(('ssh -o UserKnownHostsFile=/dev/null -t -t ', remote_host, ' "', command, '"')))
 
+
 class TcdsError(Exception):
     pass
 
+
 class Tcdb(object):
+    """Helper class to connect to TCDB"""
     @staticmethod
     def connect():
         exec 'import psycopg2'
@@ -141,8 +152,10 @@ class Tcdb(object):
         conn_string.append('='.join(('port', '5432')))
         return psycopg2.connect(' '.join(conn_string))
 
+
 class Resolv(object):
     def uuid_to_ip(self, uuid): pass
+
 
 class LocalResolv(Resolv):
     mapping = None
@@ -154,6 +167,7 @@ class LocalResolv(Resolv):
             return self.mapping[uuid]
         else:
             return ''
+
 
 class TcdbResolv(Resolv):
     conn = None

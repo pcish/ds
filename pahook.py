@@ -1,7 +1,9 @@
 """TCDS API
 Exports the functions:
     createDepot
+    deleteDepot
     getDepotInfo
+    getDepotInfoList
     addStorageNodes
     removeStorageNodes
 

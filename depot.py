@@ -94,7 +94,7 @@ class Depot(object):
             if Depot._get_meets_min_requirements(replication=self.var.get_depot_replication_factor(self), **daemon_count):
                 self.activate()
             else:
-                self.utils.dout(logging.DEBUG, '%s %s' % (daemon_count, self.var.get_depot_replication_factor(self)))
+                self.utils.dout(logging.DEBUG, 'Add complete, not activating (daemon count=%s, replication=%s)' % (daemon_count, self.var.get_depot_replication_factor(self)))
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
             old_config = copy.deepcopy(self.config)
             old_config_str = '%s' % old_config

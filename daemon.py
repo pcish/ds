@@ -52,6 +52,7 @@ class Daemon(object):
         return self.depot.var.get_daemon_ceph_name(self)
 
     def add_to_config(self, config): assert 0, 'virtual function called'
+
     def del_from_config(self, config):
         config.del_daemon(self)
 

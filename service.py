@@ -4,6 +4,7 @@ from depot import Depot
 class TcdsService(object):
     _depot_map = {}
     utils = None
+
     def __init__(self, utils, varstore):
         self._depot_map = {}
         self.utils = utils

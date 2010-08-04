@@ -3,6 +3,11 @@ import sys
 import string
 
 class CephConfFile(object):
+    """Helper class to read human modified ceph.conf files
+
+    Strips leading whitespace from lines when reading in the file so that
+    ConfigParser can parse it.
+    """
     __fd = None
     def __init__(self, filename):
         self.__fd = open(filename)
@@ -14,6 +19,7 @@ class CephConfFile(object):
 
     def __del__(self):
         self.__fd.close()
+
 
 class TCCephConf(ConfigParser.RawConfigParser):
     DEFAULTS = {

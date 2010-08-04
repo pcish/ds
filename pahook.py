@@ -14,7 +14,6 @@ functions to call.
 import uuid
 import logging
 from service import TcdsService
-from depot import Depot
 from varstore import TcdbVarStore as VariableStore
 from tcdsutils import TcServiceUtils as Utils
 from tcdsutils import TcdbResolv as Resolv
@@ -24,11 +23,13 @@ _service = TcdsService(__utils, VariableStore())
 
 class TcdsApiErrorResponse(dict):
     def __init__(self, code, message):
+        dict.__init__(self)
         self['result_code'] = _service.utils.error_code(code)
         self['error_message'] = '%s' % message
 
 class TcdsApiSuccessResponse(dict):
     def __init__(self, additional_fields):
+        dict.__init__(self)
         self['result_code'] = _service.utils.error_code(_service.utils.SUCCESS)
         self.update(additional_fields)
 

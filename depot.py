@@ -3,7 +3,7 @@ import os
 import copy
 
 from cephconf import TCCephConf
-from daemon import Mon, Mds, Osd, Daemon
+from daemon import Mon, Mds, Osd
 from tcdsutils import TcdsError
 
 class OsdGroup(list):
@@ -97,7 +97,6 @@ class Depot(object):
                 self.utils.dout(logging.DEBUG, 'Add complete, not activating (daemon count=%s, replication=%s)' % (daemon_count, self.var.get_depot_replication_factor(self)))
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
             old_config = copy.deepcopy(self.config)
-            old_config_str = '%s' % old_config
             if len(new_mons) > 0:
                 for daemon in new_mons:
                     # add monitor to the mon map
@@ -172,12 +171,12 @@ class Depot(object):
     def set_state(self, state):
         self.var.set_depot_state(self, state)
 
-    def get_daemon_list(self, type='all'):
-        if type == 'all':
+    def get_daemon_list(self, daemon_type='all'):
+        if daemon_type == 'all':
             return self._daemon_map.values()
         return_list = []
         for daemon in self._daemon_map.values():
-            if daemon.TYPE == type:
+            if daemon.TYPE == daemon_type:
                 return_list.append(daemon)
         return return_list
 
@@ -251,7 +250,8 @@ class Depot(object):
             daemon.write_config()
 
     def activate(self):
-        if self.get_state() != self.CONSTANTS['STATE_OFFLINE']: return False
+        if self.get_state() != self.CONSTANTS['STATE_OFFLINE']: 
+            return False
         daemon_list = self.get_daemon_list()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
         for daemon in daemon_list:

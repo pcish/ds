@@ -1,6 +1,4 @@
 import ConfigParser
-import sys
-import string
 
 class CephConfFile(object):
     """Helper class to read human modified ceph.conf files
@@ -32,7 +30,7 @@ class TCCephConf(ConfigParser.RawConfigParser):
         try:
             return ConfigParser.RawConfigParser.get(self, section, option)
         except ConfigParser.NoOptionError as e:
-            if section.startswith(('mon','mds','osd')):
+            if section.startswith(('mon', 'mds', 'osd')):
                 if section.__len__() > 3:
                     return self.get(section[:3], option)
                 elif section.__len__() == 3:
@@ -59,15 +57,15 @@ class TCCephConf(ConfigParser.RawConfigParser):
         self.add_section('mount /')
         self.set('mount /', 'allow', '%everyone')
 
-    def add_mon(self, daemon, hostname, ip=None, port=None):
-        if ip is None:
-            ip = hostname
+    def add_mon(self, daemon, hostname, ipaddr=None, port=None):
+        if ipaddr is None:
+            ipaddr = hostname
         if port is None:
             port = 6789
         section_name = self._get_section(daemon)
         self.add_section(section_name)
         self.set(section_name, 'host', '%s' % hostname)
-        self.set(section_name, 'mon addr', '%s:%s' % (ip, port))
+        self.set(section_name, 'mon addr', '%s:%s' % (ipaddr, port))
 
     def add_mds(self, daemon, hostname):
         section_name = self._get_section(daemon)
@@ -82,7 +80,8 @@ class TCCephConf(ConfigParser.RawConfigParser):
     def del_daemon(self, daemon):
         self.remove_section(self._get_section(daemon))
 
-    def _get_section(self, daemon):
+    @staticmethod
+    def _get_section(daemon):
         if daemon.TYPE == 'osd':
             section_str = '%s%s' % (daemon.TYPE, daemon.get_ceph_name())
         else:
@@ -106,10 +105,10 @@ class TCCephConf(ConfigParser.RawConfigParser):
         return (active_mon_ip, '%s' % sections[i][4:])
 
     def __str__(self):
-        s = ''
+        ret_str = ''
         for section in sorted(self.sections()):
-            s += '[%s]\n' % section
+            ret_str += '[%s]\n' % section
             for k, v in self.items(section):
-                s += '%s = %s\n' % (k, v)
-            s += '\n'
-        return s
+                ret_str += '%s = %s\n' % (k, v)
+            ret_str += '\n'
+        return ret_str

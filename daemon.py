@@ -1,6 +1,4 @@
-import ConfigParser
 import os
-import inspect
 
 class Daemon(object):
     depot = None
@@ -22,16 +20,16 @@ class Daemon(object):
         self.conf_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX, '%s.conf' % self.depot.uuid)
 
     @staticmethod
-    def cmp_name(self, other):
-        if self.TYPE == other.TYPE:
-            self_name = self.get_ceph_name()
-            other_name = other.get_ceph_name()
-            if self_name.isdigit() and other_name.isdigit():
-                return cmp(int(self_name), int(other_name))
+    def cmp_name(first, second):
+        if first.TYPE == second.TYPE:
+            first_name = first.get_ceph_name()
+            second_name = second.get_ceph_name()
+            if first_name.isdigit() and second_name.isdigit():
+                return cmp(int(first_name), int(second_name))
             else:
-                return cmp(self_name, other_name)
+                return cmp(first_name, second_name)
         else:
-            return cmp(self.TYPE, other.TYPE)
+            return cmp(first.TYPE, second.TYPE)
 
     def set_uuid(self, uuid):
         self.depot.var.set_daemon_uuid(self, uuid)
@@ -57,14 +55,16 @@ class Daemon(object):
         config.del_daemon(self)
 
     def set_config(self, config):
-        self.conf_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX, '%s.conf' % config.get('tcloud', 'depot'))
+        self.conf_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX,
+            '%s.conf' % config.get('tcloud', 'depot'))
         self.config = config
 
     def write_config(self):
         tmp_file_path = '/tmp/%s.conf' % self.config.get('tcloud', 'depot')
         with open(tmp_file_path, 'wb') as tmp_file:
             self.config.write(tmp_file)
-        cmd = 'scp %s %s:%s' % (tmp_file_path, self.get_host_ip(), self.conf_file_path)
+        cmd = 'scp %s %s:%s' % (tmp_file_path, self.get_host_ip(), 
+            self.conf_file_path)
         self.utils.run_shell_command(cmd)
 
     def setup(self, config):
@@ -76,14 +76,16 @@ class Daemon(object):
 
     def activate(self):
         self.write_config()
-        cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
+        cmd = "%s -c %s --hostname %s start %s" % (self.INIT_SCRIPT, 
+            self.conf_file_path, self.get_host_ip(), self.TYPE)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def status(self):
         pass
 
     def deactivate(self):
-        cmd = "%s -c %s --hostname %s stop %s" % (self.INIT_SCRIPT, self.conf_file_path, self.get_host_ip(), self.TYPE)
+        cmd = "%s -c %s --hostname %s stop %s" % (self.INIT_SCRIPT, 
+            self.conf_file_path, self.get_host_ip(), self.TYPE)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def delete(self):
@@ -102,7 +104,8 @@ class Osd(Daemon):
         cmd = "mkdir -p %s" % (self.config.get('osd', 'osd data'),)
         cmd = cmd.replace('$id', self.get_ceph_name())
         self.utils.run_remote_command(self.get_host_ip(), cmd)
-        cmd = "mkdir -p %s" % (os.path.dirname(self.config.get('osd', 'osd journal')),)
+        cmd = "mkdir -p %s" % (
+            os.path.dirname(self.config.get('osd', 'osd journal')),)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         self.write_config()
@@ -111,13 +114,16 @@ class Osd(Daemon):
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
         # format the new osd data dir
-        cmd = 'cosd -c %s -i %s --mkfs --monmap /tmp/monmap' % (self.conf_file_path, self.get_ceph_name())
+        cmd = 'cosd -c %s -i %s --mkfs --monmap /tmp/monmap' % (
+            self.conf_file_path, self.get_ceph_name())
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def delete(self):
-        cmd = 'ceph -c %s osd out %s' % (self.conf_file_path, self.get_ceph_name())
+        cmd = 'ceph -c %s osd out %s' % (self.conf_file_path, 
+            self.get_ceph_name())
         self.utils.run_shell_command(cmd)
-        cmd = 'ceph -c %s osd down %s' % (self.conf_file_path, self.get_ceph_name())
+        cmd = 'ceph -c %s osd down %s' % (self.conf_file_path, 
+            self.get_ceph_name())
         self.utils.run_shell_command(cmd)
         self.deactivate()
 
@@ -129,7 +135,8 @@ class Mds(Daemon):
         config.add_mds(self, self.get_host_ip())
 
     def delete(self):
-        cmd = 'ceph -c %s mds stop %s' % (self.conf_file_path, self.get_ceph_name())
+        cmd = 'ceph -c %s mds stop %s' % (self.conf_file_path, 
+            self.get_ceph_name())
         self.utils.run_shell_command(cmd)
 
 class Mon(Daemon):
@@ -144,22 +151,29 @@ class Mon(Daemon):
 
         # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
-        cmd = 'rm -rf %s' % self.config.get('mon', 'mon data').replace('$id', active_mon_id)
+        cmd = 'rm -rf %s' % \
+            self.config.get('mon', 'mon data').replace('$id', active_mon_id)
         self.utils.run_remote_command(self.get_host_ip(), cmd)
-        cmd = 'rm -rf %s' % self.config.get('mon', 'mon data').replace('$id', self.get_ceph_name())
+        cmd = 'rm -rf %s' % \
+            self.config.get('mon', 'mon data').replace('$id', 
+            self.get_ceph_name())
         self.utils.run_remote_command(self.get_host_ip(), cmd)
-        cmd = 'scp -r %s:%s %s:%s' %  \
-                (active_mon_ip, self.config.get('mon', 'mon data').replace('$id', active_mon_id),
-                self.get_host_ip(), os.path.dirname(self.config.get('mon', 'mon data'))
-                )
+        cmd = 'scp -r %s:%s %s:%s' % (
+            active_mon_ip, self.config.get('mon', 'mon data').replace('$id', 
+            active_mon_id), self.get_host_ip(), 
+            os.path.dirname(self.config.get('mon', 'mon data'))
+            )
         self.utils.run_shell_command(cmd)
 
-        cmd = 'mv %s %s' % (self.config.get('mon', 'mon data').replace('$id', active_mon_id),
-            self.config.get('mon', 'mon data').replace('$id', self.get_ceph_name()))
+        cmd = 'mv %s %s' % (
+            self.config.get('mon', 'mon data').replace('$id', active_mon_id),
+            self.config.get('mon', 'mon data').replace('$id', 
+            self.get_ceph_name()))
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
     def delete(self):
-        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_name())
+        cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, 
+            self.get_ceph_name())
         self.utils.run_shell_command(cmd)
 
 

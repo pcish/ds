@@ -116,7 +116,7 @@ class TcServiceUtils(ServiceUtils):
 
     def run_shell_command(self, command):
         pcmd = ['%s' % command]
-        self.dout(logging.INFO, pcmd)
+        self.dout(logging.DEBUG, pcmd)
         pipe = subprocess.Popen(pcmd, stdout = subprocess.PIPE,
                 stderr = subprocess.PIPE, shell = True)
         pout = pipe.communicate()

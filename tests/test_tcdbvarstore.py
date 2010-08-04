@@ -8,11 +8,13 @@ from varstore import *
 
 class TestTcdbVarStore(TestVarStore):
     def setUp(self):
-        self.depot_uuid = str(uuid.uuid4())
+        super(TestTcdbVarStore, self).setUp()
         exec 'from tcdsutils import Tcdb'
         conn = Tcdb.connect()
         cur = conn.cursor()
         cur.execute('insert into "SERVICE_GROUP" values (%s, 4, 5)', (self.depot_uuid,))
+        conn.commit()
+        cur.execute('insert into "SERVICE_GROUP" values (%s, 4, 5)', (self.depot_uuid2,))
         conn.commit()
         cur.close()
         conn.close()
@@ -30,6 +32,8 @@ class TestTcdbVarStore(TestVarStore):
         conn = Tcdb.connect()
         cur = conn.cursor()
         cur.execute('delete from "SERVICE_GROUP" where "ID"=%s', (self.depot_uuid,))
+        conn.commit()
+        cur.execute('delete from "SERVICE_GROUP" where "ID"=%s', (self.depot_uuid2,))
         conn.commit()
         cur.close()
         conn.close()

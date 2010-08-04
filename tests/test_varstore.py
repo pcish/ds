@@ -12,9 +12,11 @@ from tcdsutils import LocalResolv as Resolv
 class TestVarStore(unittest.TestCase):
     var = None
     depot_uuid = ''
+    depot_uuid2 = ''
     def setUp(self):
         self.var = None
         self.depot_uuid = str(uuid.uuid4())
+        self.depot_uuid2 = str(uuid.uuid4())
 
     def run(self, *args, **kwds): pass
 
@@ -34,10 +36,10 @@ class TestVarStore(unittest.TestCase):
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 30, depot.CONSTANTS['STATE_OFFLINE'])
         self.assertEquals(self.var.get_depot_state(depot), depot.CONSTANTS['STATE_OFFLINE'])
-        new_uuidstr = str(uuid.uuid4())
-        self.var.set_depot_uuid(depot, new_uuidstr)
+        uuidstr2 = self.depot_uuid2
+        self.var.set_depot_uuid(depot, uuidstr2)
         self.assertRaises(KeyError, self.var.get_depot_state, depot)
-        depot.uuid = new_uuidstr
+        depot.uuid = uuidstr2
         self.assertEquals(self.var.get_depot_state(depot), depot.CONSTANTS['STATE_OFFLINE'])
         self.var.del_depot(depot)
 
@@ -118,6 +120,7 @@ class TestVarStore(unittest.TestCase):
 
 class TestLocalVarStore(TestVarStore):
     def setUp(self):
+        super(TestLocalVarStore, self).setUp()
         self.var = LocalVarStore()
     def run(self, *args, **kwds):
         unittest.TestCase.run(self, *args, **kwds)

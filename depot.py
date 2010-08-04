@@ -103,7 +103,7 @@ class Depot(object):
                     # add monitor to the mon map
                     cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_name(), daemon.get_host_ip())
                     self.utils.run_shell_command(cmd)
-                    print cmd
+                    self._wait_for_map_update()
             for daemon in new_daemon_list:
                 daemon.setup(old_config)
             for daemon in new_daemon_list:
@@ -126,6 +126,11 @@ class Depot(object):
                 daemon.activate()
             self.write_config()
         return new_daemon_list
+
+    def _wait_for_map_update(self):
+        """Returns only after the monitors have updated their maps"""
+        exec 'import time'
+        time.sleep(5)   # FIXME: ideas welcome...
 
     def _generate_crushmap(self):
         num_osd = self._get_daemon_count()['num_osd']

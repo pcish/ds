@@ -26,7 +26,7 @@ class TcdsService(object):
         return depot
 
     def remove_depot(self, depot_id):
-        self._depot_map[depot_id].clean()
+        self._depot_map[depot_id].delete()
         self.var.del_depot(self._depot_map[depot_id])
         del self._depot_map[depot_id]
 

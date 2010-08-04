@@ -155,7 +155,7 @@ class Depot(object):
 
     def _del_daemons(self, daemons_to_remove):
         for daemon in daemons_to_remove:
-            daemon.clean()
+            daemon.delete()
             daemon.del_from_config(self.config)
             del self._daemon_map[daemon.uuid]
         self.var.remove_daemons(daemons_to_remove)
@@ -273,10 +273,8 @@ class Depot(object):
             daemon.deactivate()
         self.set_state(self.CONSTANTS['STATE_OFFLINE'])
 
-    def clean(self):
-        for daemon in self.get_daemon_list():
-            daemon.clean()
-        self.var.remove_daemons(self.get_daemon_list())
+    def delete(self):
+        self._del_daemons(self.get_daemon_list())
         os.remove(self.config_file_path)
 
 

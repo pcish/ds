@@ -155,7 +155,6 @@ class Depot(object):
 
     def _del_daemons(self, daemons_to_remove):
         for daemon in daemons_to_remove:
-            daemon.deactivate()
             daemon.clean()
             daemon.del_from_config(self.config)
             del self._daemon_map[daemon.uuid]

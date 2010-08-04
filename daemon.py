@@ -112,6 +112,13 @@ class Osd(Daemon):
         # format the new osd data dir
         cmd = 'cosd -c %s -i %s --mkfs --monmap /tmp/monmap' % (self.conf_file_path, self.get_ceph_name())
         self.utils.run_remote_command(self.get_host_ip(), cmd)
+    
+    def clean(self):
+        cmd = 'ceph -c %s osd out %s' % (self.conf_file_path, self.get_ceph_name())
+        self.utils.run_shell_command(cmd)
+        cmd = 'ceph -c %s osd down %s' % (self.conf_file_path, self.get_ceph_name())
+        self.utils.run_shell_command(cmd)
+        self.deactivate()
 
 
 class Mds(Daemon):
@@ -119,6 +126,10 @@ class Mds(Daemon):
     TYPE = 'mds'
     def add_to_config(self, config):
         config.add_mds(self, self.get_host_ip())
+    
+    def clean(self):
+        cmd = 'ceph -c mds stop %s' % (self.conf_file_path, self.get_ceph_name())
+        self.utils.run_shell_command(cmd)
 
 class Mon(Daemon):
     DAEMON_NAME = 'cmon'
@@ -146,7 +157,7 @@ class Mon(Daemon):
             self.config.get('mon', 'mon data').replace('$id', self.get_ceph_name()))
         self.utils.run_remote_command(self.get_host_ip(), cmd)
 
-    def deactivate(self):
+    def clean(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path, self.get_ceph_name())
         self.utils.run_shell_command(cmd)
 

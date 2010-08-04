@@ -183,7 +183,7 @@ class Depot(object):
             daemon_count['num_'+daemon.TYPE] = daemon_count['num_'+daemon.TYPE] + 1
         return daemon_count
 
-    def set_replication_factor(self, factor):
+    def apply_replication_factor(self, factor):
         assert self.config_file_path is not None, 'config_file_path not set'
         cmd = "ceph -c %s osd pool set metadata size %s" % (self.config_file_path, factor)
         self.utils.run_shell_command(cmd)
@@ -264,7 +264,7 @@ class Depot(object):
         for daemon in daemon_list:
             daemon.activate()
 
-        self.set_replication_factor(self.var.get_depot_replication_factor(self))
+        self.apply_replication_factor(self.var.get_depot_replication_factor(self))
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
         return True
 

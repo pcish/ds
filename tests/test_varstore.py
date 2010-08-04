@@ -71,7 +71,7 @@ class TestVarStore(unittest.TestCase):
         uuidstr = str(uuid.uuid4())
         daemon = Mon(depot, uuidstr)
         host = str(uuid.uuid4())
-        ceph_name = 0
+        ceph_name = '0'
         self.var.add_daemon(daemon, uuidstr, host, ceph_name)
         self.assertEquals(self.var.get_daemon_host(daemon), host)
         self.assertEquals(self.var.get_daemon_ceph_name(daemon), str(ceph_name))
@@ -87,7 +87,7 @@ class TestVarStore(unittest.TestCase):
         uuidstr = str(uuid.uuid4())
         daemon = Mon(depot, uuidstr)
         host = str(uuid.uuid4())
-        ceph_name = 0
+        ceph_name = '0'
         self.var.add_daemon(daemon, uuidstr, host, ceph_name)
         self.assertEquals(self.var.get_depot_daemon_list(depot), [{'type': 'mon', 'host': host, 'ceph_name': '0', 'uuid': uuidstr}])
         uuidstr2 = str(uuid.uuid4())
@@ -100,23 +100,56 @@ class TestVarStore(unittest.TestCase):
         self.var.remove_daemons((daemon, daemon2))
         self.var.del_depot(depot)
 
-    """
-    def set_daemon_uuid(self, daemon, uuid):
-        daemon.depot._localvars['daemons'][uuid] = daemon.depot._localvars['daemons'][daemon.uuid]
-        del daemon.depot._localvars['daemons'][daemon.uuid]
+    def test_set_daemon_uuid(self):
+        service = TcdsService(Utils(Resolv()), self.var)
+        uuidstr = self.depot_uuid
+        depot = Depot(service, uuidstr)
+        self.var.add_depot(depot, uuidstr, 30, depot.CONSTANTS['STATE_OFFLINE'])
+        uuidstr = str(uuid.uuid4())
+        daemon = Mon(depot, uuidstr)
+        host = str(uuid.uuid4())
+        ceph_name = '972'
+        self.var.add_daemon(daemon, uuidstr, host, ceph_name)
+        uuidstr2 = str(uuid.uuid4())
+        self.var.set_daemon_uuid(daemon, uuidstr2)
+        self.assertRaises(KeyError, self.var.get_daemon_ceph_name, daemon)
+        daemon.uuid = uuidstr2
+        self.assertEquals(self.var.get_daemon_ceph_name(daemon), ceph_name)
+        self.var.remove_daemons((daemon,))
+        self.var.del_depot(depot)
+    
+    def test_set_daemon_host(self):
+        service = TcdsService(Utils(Resolv()), self.var)
+        uuidstr = self.depot_uuid
+        depot = Depot(service, uuidstr)
+        self.var.add_depot(depot, uuidstr, 3, depot.CONSTANTS['STATE_OFFLINE'])
+        uuidstr = str(uuid.uuid4())
+        daemon = Mon(depot, uuidstr)
+        host = str(uuid.uuid4())
+        ceph_name = '972'
+        self.var.add_daemon(daemon, uuidstr, host, ceph_name)
+        host2 = str(uuid.uuid4())
+        self.var.set_daemon_host(daemon, host2)
+        self.assertEquals(self.var.get_daemon_host(daemon), host2)
+        self.var.remove_daemons((daemon,))
+        self.var.del_depot(depot)
 
-    def set_daemon_host(self, daemon, host_uuid):
-        daemon._localvars['host'] = host_uuid
+    def test_set_daemon_ceph_name(self):
+        service = TcdsService(Utils(Resolv()), self.var)
+        uuidstr = self.depot_uuid
+        depot = Depot(service, uuidstr)
+        self.var.add_depot(depot, uuidstr, 3, depot.CONSTANTS['STATE_OFFLINE'])
+        uuidstr = str(uuid.uuid4())
+        daemon = Mon(depot, uuidstr)
+        host = str(uuid.uuid4())
+        ceph_name = '972'
+        self.var.add_daemon(daemon, uuidstr, host, ceph_name)
+        ceph_name2 = '888'
+        self.var.set_daemon_ceph_name(daemon, ceph_name2)
+        self.assertEquals(self.var.get_daemon_ceph_name(daemon), ceph_name2)
+        self.var.remove_daemons((daemon,))
+        self.var.del_depot(depot)
 
-    def get_daemon_host(self, daemon):
-        return daemon._localvars['host']
-
-    def set_daemon_ceph_name(self, daemon, ceph_name):
-        daemon._localvars['ceph_name'] = str(ceph_name)
-
-    def get_daemon_ceph_name(self, daemon):
-        return daemon._localvars['ceph_name']
-    """
 
 class TestLocalVarStore(TestVarStore):
     def setUp(self):

@@ -64,7 +64,7 @@ class TcdbVarStore(VarStore):
     PERSISTENT = True
     conn = None
     def __init__(self):
-        exec 'from serviceglobals import Tcdb'
+        exec 'from tcdsutils import Tcdb'
         self.conn = Tcdb.connect()
 
     def add_depot(self, depot, uuid, replication, state):
@@ -129,7 +129,7 @@ class TcdbVarStore(VarStore):
 
     def set_daemon_uuid(self, daemon, uuid):
         self._execute_commit('update "TCDS_NODE" set "ID"=%s where "ID"=%s',
-            (host_uuid, daemon.uuid))
+            (uuid, daemon.uuid))
 
     def set_daemon_host(self, daemon, host_uuid):
         self._execute_commit('update "TCDS_NODE" set "SERVER_ID"=%s where "ID"=%s',

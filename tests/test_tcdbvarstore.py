@@ -9,6 +9,7 @@ from varstore import *
 class TestTcdbVarStore(TestVarStore):
     def setUp(self):
         super(TestTcdbVarStore, self).setUp()
+        self.var = TcdbVarStore()
         exec 'from tcdsutils import Tcdb'
         conn = Tcdb.connect()
         cur = conn.cursor()

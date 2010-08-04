@@ -10,13 +10,15 @@ TcdsService. An instance of the TcdsService class is maintained for the
 functions to call.
 """
 import uuid
+import logging
 from service import TcdsService
 from depot import Depot
 from varstore import TcdbVarStore as VariableStore
 from tcdsutils import TcServiceUtils as Utils
 from tcdsutils import TcdbResolv as Resolv
 
-_service = TcdsService(Utils(Resolv()), VariableStore())
+__utils = Utils(Resolv())
+_service = TcdsService(__utils, VariableStore())
 
 class TcdsApiErrorResponse(dict):
     def __init__(self, code, message):
@@ -38,7 +40,7 @@ def createDepot(args):
         * error_message on failure
         * depot_id when succeed
     """
-
+    __utils.dout(logging.DEBUG, 'createDepot: called with %s' % args)
     NewDepotID = str(uuid.uuid4())
 
     if 'replication_number' in args and args['replication_number'] > 0:
@@ -62,6 +64,7 @@ def deleteDepot(args):
     @type args:     dict
     @param args:    'depot_id': uuid string of the depot to delete
     """
+    __utils.dout(logging.DEBUG, 'deleteDepot: called with %s' % args)
     try:
         _service.remove_depot(args['depot_id'])
     except KeyError:
@@ -78,6 +81,7 @@ def getDepotInfoList(args):
         OUTPUT
             depot_info_list
     """
+    __utils.dout(logging.DEBUG, 'getDepotInfoList: called with %s' % args)
     depot_info_list = []
     for depot_id in _service._depot_map.keys():
         try:
@@ -100,7 +104,7 @@ def getDepotInfo(args):
             * result['depot_info']
             * result['depot_info']
     """
-
+    __utils.dout(logging.DEBUG, 'getDepotInfo: called with %s' % args)
     try:
         depot_info = _service.query_depot(args['depot_id'])
     except KeyError:
@@ -121,6 +125,7 @@ def addStorageNodes(args):
             * result_code
             * error_message on failure
     """
+    __utils.dout(logging.DEBUG, 'addStorageNodes: called with %s' % args)
     try:
         daemon_spec_list = []
         for node in args['node_spec_list']:
@@ -147,6 +152,7 @@ def removeStorageNodes(args):
     ]
     }
     """
+    __utils.dout(logging.DEBUG, 'removeStorageNodes: called with %s' % args)
     if 'force' not in args:
         args['force'] = False
     try:

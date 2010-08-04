@@ -13,10 +13,10 @@ import uuid
 from service import TcdsService
 from depot import Depot
 from varstore import TcdbVarStore as VariableStore
-from tcdsutils import TcServiceUtils as Globals
+from tcdsutils import TcServiceUtils as Utils
 from tcdsutils import TcdbResolv as Resolv
 
-_service = TcdsService(Globals(Resolv()), VariableStore())
+_service = TcdsService(Utils(Resolv()), VariableStore())
 
 class TcdsApiErrorResponse(dict):
     def __init__(self, code, message):
@@ -25,7 +25,7 @@ class TcdsApiErrorResponse(dict):
 
 class TcdsApiSuccessResponse(dict):
     def __init__(self, additional_fields):
-        self['result_code'] = _service.utils.error_code(Globals.SUCCESS)
+        self['result_code'] = _service.utils.error_code(Utils.SUCCESS)
         self.update(additional_fields)
 
 def createDepot(args):
@@ -49,12 +49,12 @@ def createDepot(args):
     try:
         depot = _service.create_depot(NewDepotID, replication_number)
     except Exception as e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, e)
     else:
         if depot is not None:
             return TcdsApiSuccessResponse({'depot_id': NewDepotID})
         else:
-            return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'failed to create depot')
+            return TcdsApiErrorResponse(Utils.ERROR_GENERAL, 'failed to create depot')
 
 def deleteDepot(args):
     """Takes a depot uuid and deletes the corresponding depot
@@ -65,9 +65,9 @@ def deleteDepot(args):
     try:
         _service.remove_depot(args['depot_id'])
     except KeyError:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, e)
     else:
         return TcdsApiSuccessResponse()
 
@@ -85,7 +85,7 @@ def getDepotInfoList(args):
         except KeyError:
             _service.utils.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
         except Exception as e:
-            return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+            return TcdsApiErrorResponse(Utils.ERROR_GENERAL, e)
         else:
             depot_info_list.append(depot_info['depot_info'])
     return TcdsApiSuccessResponse({'depot_info_list': depot_info_list})
@@ -104,9 +104,9 @@ def getDepotInfo(args):
     try:
         depot_info = _service.query_depot(args['depot_id'])
     except KeyError:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, e)
     else:
         return TcdsApiSuccessResponse({'depot_info': depot_info})
 
@@ -128,9 +128,9 @@ def addStorageNodes(args):
                 daemon_spec_list.append({'type': role, 'host': node['node_id'], 'uuid': str(uuid.uuid4())})
         depot_info = _service.add_daemons_to_depot(args['depot_id'], daemon_spec_list)
     except KeyError, e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot. %s' % str(e))
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, 'No such depot. %s' % str(e))
     except Exception as e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, e)
     else:
         return TcdsApiSuccessResponse({'depot_info': depot_info})
 
@@ -152,8 +152,8 @@ def removeStorageNodes(args):
     try:
         depot_info = _service.del_nodes_from_depot(args['depot_id'], args['node_list'], args['force'])
     except KeyError:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        return TcdsApiErrorResponse(Globals.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(Utils.ERROR_GENERAL, e)
     else:
         return TcdsApiSuccessResponse({'depot_info': depot_info})

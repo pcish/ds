@@ -6,7 +6,7 @@ from varstore import *
 from service import TcdsService
 from depot import Depot
 from daemon import Mon, Mds
-from tcdsutils import LocalUnittestServiceUtils as Globals
+from tcdsutils import LocalUnittestServiceUtils as Utils
 from tcdsutils import LocalResolv as Resolv
 
 class TestVarStore(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestVarStore(unittest.TestCase):
     def run(self, *args, **kwds): pass
 
     def test_add_del_depot(self):
-        service = TcdsService(Globals(Resolv()), self.var)
+        service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 30, depot.CONSTANTS['STATE_OFFLINE'])
@@ -29,7 +29,7 @@ class TestVarStore(unittest.TestCase):
         self.assertRaises(KeyError, self.var.get_depot_state, depot)
 
     def test_set_depot_uuid(self):
-        service = TcdsService(Globals(Resolv()), self.var)
+        service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 30, depot.CONSTANTS['STATE_OFFLINE'])
@@ -42,7 +42,7 @@ class TestVarStore(unittest.TestCase):
         self.var.del_depot(depot)
 
     def test_set_depot_state(self):
-        service = TcdsService(Globals(Resolv()), self.var)
+        service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 30, depot.CONSTANTS['STATE_OFFLINE'])
@@ -52,7 +52,7 @@ class TestVarStore(unittest.TestCase):
         self.var.del_depot(depot)
 
     def est_set_depot_replication_factor(self):
-        service = TcdsService(Globals(Resolv()), self.var)
+        service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 3, depot.CONSTANTS['STATE_OFFLINE'])
@@ -62,7 +62,7 @@ class TestVarStore(unittest.TestCase):
         self.var.del_depot(depot)
 
     def test_add_remove_daemon(self):
-        service = TcdsService(Globals(Resolv()), self.var)
+        service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 30, depot.CONSTANTS['STATE_OFFLINE'])
@@ -78,7 +78,7 @@ class TestVarStore(unittest.TestCase):
         self.var.del_depot(depot)
 
     def test_get_depot_daemon_list(self):
-        service = TcdsService(Globals(Resolv()), self.var)
+        service = TcdsService(Utils(Resolv()), self.var)
         uuidstr = self.depot_uuid
         depot = Depot(service, uuidstr)
         self.var.add_depot(depot, uuidstr, 3, depot.CONSTANTS['STATE_OFFLINE'])

@@ -158,7 +158,7 @@ class TcdbVarStore(VarStore):
         return cur
 
     def _execute_fetchone(self, sql_statement, parameters=None):
-        cur = _execute(sql_statement, parameters)
+        cur = self._execute(sql_statement, parameters)
         row = cur.fetchone()
         cur.close()
         if row is None:
@@ -166,13 +166,13 @@ class TcdbVarStore(VarStore):
         return row
 
     def _execute_fetchall(self, sql_statement, parameters=None):
-        cur = _execute(sql_statement, parameters)
+        cur = self._execute(sql_statement, parameters)
         rows = cur.fetchall()
         cur.close()
         return rows
 
     def _execute_commit(self, sql_statement, parameters=None):
-        cur = _execute(sql_statement, parameters)
+        cur = self._execute(sql_statement, parameters)
         self.conn.commit()
         cur.close()
 

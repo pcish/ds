@@ -1,11 +1,25 @@
+"""Collection of utility functions and global variables used by the ds package
+
+Exports that are for external use:
+* TcServiceUtils
+* Tcdb
+* TcdbResolv
+"""
 import subprocess
 import logging
 
 class ServiceUtils(object):
+    """Base (abstract) class that defines global variables and the
+    ServiceUtils interface"""
     SUCCESS = 0
+    """Return value used internally to indicate success"""
     ERROR_GENERAL = 1
+    """Return value used internally to indicate failure"""
     resolv = None
+    """Class object that provides the Resolv interface (which looks up IP from
+    host uuid's"""
     CONFIG_FILE_PATH_PREFIX = ''
+    """Directory in which the ceph configuration files are stored"""
     def __init__(self, resolv=None):
         self.resolv = resolv
     def get_libceph(self, config_file_path): return None

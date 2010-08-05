@@ -7,6 +7,7 @@ Exports:
 import logging
 import os
 import copy
+import stat
 
 from cephconf import TCCephConf
 from daemon import Mon, Mds, Osd
@@ -182,6 +183,8 @@ class Depot(object):
             else:
                 self.utils.dout(logging.DEBUG, 'Add complete, not activating (daemon count=%s, replication=%s)' % (daemon_count, self.var.get_depot_replication_factor(self)))
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
+            if self._check_depot() is not True:
+                raise TcdsError('aborting add because depot does not appear to be usable')
             # Setup
             old_config = copy.deepcopy(self.config)
             if len(new_mons) > 0:
@@ -374,5 +377,26 @@ class Depot(object):
         self._del_daemons(self.get_daemon_list())
         os.remove(self.config_file_path)
 
+    def _check_depot(self):
+        libceph = self.utils.get_libceph(self.config_file_path)
+        if libceph is None:
+            return True
+        testfile_name = "tcds.api.testfile"
+        for _ in range(retries):
+            fd = libceph.open(testfile_name, os.O_CREAT|os.O_RDWR, stat.S_IRWXU)
+            if fd >= 0:
+                break
+        else:
+            raise TcdsError('unable to create testfile')
 
+        if fd >= 0:
+            if not libceph.write(fd, testfile_name, 0):
+                raise TcdsError('CheckDepot error: write failed')
+            if not libceph.fsync(fd, False):
+                raise TcdsError('CheckDepot error: fsync failed')
+            if not libceph.close(fd):
+                raise TcdsError('CheckDepot error: close failed')
+            if not libceph.unlink(testfile_name):
+                raise TcdsError('CheckDepot error: unlink failed')
+        return True
 

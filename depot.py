@@ -379,6 +379,7 @@ class Depot(object):
 
     def _check_depot(self):
         libceph = self.utils.get_libceph(self.config_file_path)
+        retries = 3
         if libceph is None:
             return True
         testfile_name = "tcds.api.testfile"
@@ -390,13 +391,11 @@ class Depot(object):
             raise TcdsError('unable to create testfile')
 
         if fd >= 0:
-            if not libceph.write(fd, testfile_name, 0):
-                raise TcdsError('CheckDepot error: write failed')
-            if not libceph.fsync(fd, False):
-                raise TcdsError('CheckDepot error: fsync failed')
-            if not libceph.close(fd):
-                raise TcdsError('CheckDepot error: close failed')
-            if not libceph.unlink(testfile_name):
-                raise TcdsError('CheckDepot error: unlink failed')
+            if libceph.write(fd, testfile_name, 0) < 0:
+                raise TcdsError('write failed')
+            libceph.fsync(fd, False)
+            libceph.close(fd)
+            if libceph.unlink(testfile_name) != 0:
+                raise TcdsError('unlink failed')
         return True
 

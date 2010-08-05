@@ -39,18 +39,18 @@ class ServiceUtils(object):
     def __init__(self, resolv=None):
         self.__resolv = resolv
     def get_libceph(self, config_file_path): return None
-    def dout(self, level, message): pass
+    def dout(self, level, message, stack_offset=0): pass
     def error_code(self, errorno): pass
     def run_shell_command(self, command): pass
     def run_remote_command(self, remote_host, command): pass
-    def _format_dout_message(self, message):
-        caller = inspect.stack()[2]
+    def _format_dout_message(self, message, stack_offset):
+        caller = inspect.stack()[2 + stack_offset]
         return '[%s line %s] %s: %s' % (os.path.basename(caller[1]), caller[2], caller[3], message)
 
 
 class LocalDebugServiceUtils(ServiceUtils):
-    def dout(self, level, message):
-        print self._format_dout_message(message)
+    def dout(self, level, message, stack_offset=0):
+        print self._format_dout_message(message, stack_offset)
 
     def error_code(self, errorno):
         return errorno
@@ -69,7 +69,7 @@ class LocalUnittestServiceUtils(ServiceUtils):
         ServiceUtils.__init__(self, resolv)
         self.shell_commands = []
 
-    def dout(self, level, message):
+    def dout(self, level, message, stack_offset=0):
         pass
 
     def error_code(self, errorno):
@@ -103,8 +103,8 @@ class TcServiceUtils(ServiceUtils):
         exec 'from tcloud.ds.ceph.libceph import LibCeph'
         return LibCeph(['', '-c', '%s' % config_file_path])
 
-    def dout(self, level, message):
-        self._logger.log(level, self._format_dout_message(message))
+    def dout(self, level, message, stack_offset=0):
+        self._logger.log(level, self._format_dout_message(message, stack_offset))
 
     def error_code(self, errorno):
         try:
@@ -116,7 +116,7 @@ class TcServiceUtils(ServiceUtils):
 
     def run_shell_command(self, command):
         pcmd = ['%s' % command]
-        self.dout(logging.DEBUG, pcmd)
+        self.dout(logging.DEBUG, pcmd, 1)
         pipe = subprocess.Popen(pcmd, stdout = subprocess.PIPE,
                 stderr = subprocess.PIPE, shell = True)
         pout = pipe.communicate()

@@ -218,6 +218,8 @@ class Depot(object):
             # Start
             for daemon in new_daemon_list:
                 daemon.activate()
+                if self._check_depot() is not True:
+                    self.utils.dout(logging.WARNING, 'check depot failed during add, hopefully this does not matter...')
             self.write_config()
         return new_daemon_list
 

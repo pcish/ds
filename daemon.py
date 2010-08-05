@@ -178,4 +178,3 @@ class Mon(Daemon):
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
 
-

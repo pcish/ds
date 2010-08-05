@@ -1,3 +1,9 @@
+"""Classes pertaining to the control of a depot
+
+Exports:
+* Depot
+* (Depot.DepotInfo)
+"""
 import logging
 import os
 import copy
@@ -11,6 +17,13 @@ class OsdGroup(list):
     seqno = None
 
 class Depot(object):
+    """Controls and maintains the state of a depot
+
+    Dev note: Logic, statements, operations and commands that affect the entire
+        cluster belong in this class. If it affects only a single daemon, go to
+        the Daemon class. If it affects more than one depot, go to the
+        TcdsService class.
+    """
     uuid = None
     _daemon_map = None
     service = None
@@ -23,6 +36,52 @@ class Depot(object):
     config_file_path = None
     config = None
 
+    class DepotInfo(dict):
+        """Class for retrieving information about a depot
+
+        Usage: call populate() after creating an instance, passing it a depot
+
+        Keys:                 Type:    Values:
+        'depot_id'          : string - uuid of the depot
+        'depot_replication' : int    - replication factor of the depot
+        'depot_state'       : string - state of the depot
+        'depot_capacity'    : string - capacity of the depot in bytes
+        'depot_usage'       : string - used space of the depot in bytes
+        """
+        def __init__(self):
+            dict.__init__(self)
+
+        @staticmethod
+        def get_state_string(state):
+            """Maps internal depot state representation to strings
+
+            @type  state  depot internal state reprentation
+                          (int at the time of writing)
+            @param state  depot state
+
+            @rtype  string
+            @return human readable string of the depot state
+            """
+            if state == Depot.CONSTANTS['STATE_OFFLINE']:
+                return 'not ready'
+            elif state == Depot.CONSTANTS['STATE_ONLINE']:
+                return 'ready'
+
+        def populate(self, depot):
+            """Fills in predefined fields with information from the given
+            depot"""
+            self['depot_id'] = depot.uuid
+            self['depot_replication'] = depot.var.get_depot_replication_factor(depot)
+            self['depot_state'] = self.get_state_string(depot.var.get_depot_state(depot))
+            libceph = depot.utils.get_libceph(depot.config_file_path)
+            if libceph is None:
+                self['depot_capacity'] = 0
+                self['depot_usage'] = 0
+            else:
+                (avail, total) = libceph.df()
+                self['depot_capacity'] = str(total)
+                self['depot_usage'] = str(total - avail)
+
     def __init__(self, service, uuid):
         self.service = service
         self.uuid = uuid
@@ -32,6 +91,8 @@ class Depot(object):
         self.config_file_path = os.path.join(self.utils.CONFIG_FILE_PATH_PREFIX, '%s.conf' % self.uuid)
 
     def _load_saved_state(self):
+        """Read and reproduce the state of the cluster from this instance's
+        varstore."""
         daemon_spec_list = self.var.get_depot_daemon_list(self)
         for daemon_spec in daemon_spec_list:
             daemon = self._new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
@@ -40,9 +101,15 @@ class Depot(object):
         self._generate_ceph_conf()
 
     def setup(self):
+        """Prepares the depot for operation.
+
+        Call after __init__
+        """
         self._generate_ceph_conf()
 
     def _generate_ceph_conf(self):
+        """Creates from scratch a ceph.conf that matches the current state of
+        the depot."""
         self.config = TCCephConf()
         self.config.create_default(self.uuid)
         daemon_list = self.get_daemon_list()
@@ -50,22 +117,23 @@ class Depot(object):
             daemon.add_to_config(self.config)
 
     def get_info(self):
-        depot_info = {
-            'depot_id': self.uuid,
-            'depot_replication': self.var.get_depot_replication_factor(self),
-            'depot_state': ['not ready', 'ready'][self.var.get_depot_state(self)]
-        }
-        libceph = self.utils.get_libceph(self.config_file_path)
-        if libceph is None:
-            depot_info['depot_capacity'] = 0
-            depot_info['depot_usage'] = 0
-        else:
-            (avail, total) = libceph.df()
-            depot_info['depot_capacity'] = str(total)
-            depot_info['depot_usage'] = str(total - avail)
+        """Return a DepotInfo instance with this depot's information"""
+        depot_info = self.DepotInfo()
+        depot_info.populate(self)
         return depot_info
 
     def _new_daemon_instance(self, daemon_type, uuid):
+        """Create and return a new daemon instance
+
+        @type  daemon_type  string
+        @param daemon_type  the type of daemon to create. Valid types at the
+                            time of writing include 'mon','mds','osd'
+        @type  uuid  string
+        @param uuid  uuid of the new daemon
+
+        @rtype  instance of a Daemon subclass
+        @return the newly created Daemon
+        """
         if daemon_type == 'mon':
             return Mon(self, uuid)
         elif daemon_type == 'mds':
@@ -76,17 +144,35 @@ class Depot(object):
             raise ValueError('storage_roles should be one of mon, mds, osd')
 
     def add_daemons(self, daemon_spec_list):
-        new_mons = []
+        """Create daemons and add daemons to the depot
+
+        Creates, registers, sets up, and if conditions allow, starts the given
+        daemons under the depot.
+
+        @type  daemon_spec_list list
+        @param daemon_spec_list list of daemon specification dictionaries. Each
+                    daemon specification should contain the fields 'type',
+                    'host' and 'uuid'; where 'type' is a valid daemon type,
+                    'host is the uuid of the daemon's host machine, and 'uuid'
+                    is the uuid string of the new daemon
+
+        @rtype  list
+        @return a list of the daemons instances created
+        """
         orig_num_osd = self._get_daemon_count()['num_osd']
-        # create daemon instances
         new_daemon_list = []
+        new_mons = []
         for daemon_spec in daemon_spec_list:
-            new_daemon = self._new_daemon_instance(daemon_spec['type'], daemon_spec['uuid'])
+            # Create
+            new_daemon = self._new_daemon_instance(daemon_spec['type'],
+                                                   daemon_spec['uuid'])
             new_daemon_list.append(new_daemon)
             if new_daemon.TYPE == 'mon':
                 new_mons.append(new_daemon)
             new_ceph_name = self._get_next_ceph_name_for(new_daemon.TYPE)
-            self.var.add_daemon(new_daemon, daemon_spec['uuid'], daemon_spec['host'], new_ceph_name)
+            # Register
+            self.var.add_daemon(new_daemon, daemon_spec['uuid'],
+                                daemon_spec['host'], new_ceph_name)
             self._daemon_map[daemon_spec['uuid']] = new_daemon
 
         if self.get_state() == self.CONSTANTS['STATE_OFFLINE']:
@@ -96,13 +182,21 @@ class Depot(object):
             else:
                 self.utils.dout(logging.DEBUG, 'Add complete, not activating (daemon count=%s, replication=%s)' % (daemon_count, self.var.get_depot_replication_factor(self)))
         elif self.get_state() == self.CONSTANTS['STATE_ONLINE']:
+            # Setup
             old_config = copy.deepcopy(self.config)
             if len(new_mons) > 0:
                 for daemon in new_mons:
-                    # add monitor to the mon map
-                    cmd = 'ceph -c %s mon add %s %s:6789' % (self.config_file_path, daemon.get_ceph_name(), daemon.get_host_ip())
+                    cmd = 'ceph -c %s mon add %s %s:6789' % (
+                        self.config_file_path, daemon.get_ceph_name(),
+                        daemon.get_host_ip())
                     self.utils.run_shell_command(cmd)
                     self._wait_for_map_update()
+                    """NOTE: Something bad might happen if the number of
+                    monitors being added exceeds the number of original
+                    monitors. E.g. if there are three monitors and four more
+                    are added, when adding the fourth the monmap proposal should
+                    fail because only three out of six monitors are active."""
+
             for daemon in new_daemon_list:
                 daemon.setup(old_config)
             for daemon in new_daemon_list:
@@ -112,15 +206,13 @@ class Depot(object):
 
             num_osd = self._get_daemon_count()['num_osd']
             if num_osd > orig_num_osd:
-                # set max osd
                 cmd = 'ceph -c %s osd setmaxosd %s' % (self.config_file_path, num_osd)
                 self.utils.run_shell_command(cmd)
-
-                # update crush map
                 new_crushmap = self._generate_crushmap()
                 cmd = 'ceph -c %s osd setcrushmap -i %s' % (self.config_file_path, new_crushmap)
                 self.utils.run_shell_command(cmd)
 
+            # Start
             for daemon in new_daemon_list:
                 daemon.activate()
             self.write_config()
@@ -250,7 +342,7 @@ class Depot(object):
             daemon.write_config()
 
     def activate(self):
-        if self.get_state() != self.CONSTANTS['STATE_OFFLINE']: 
+        if self.get_state() != self.CONSTANTS['STATE_OFFLINE']:
             return False
         daemon_list = self.get_daemon_list()
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}

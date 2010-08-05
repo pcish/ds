@@ -29,6 +29,8 @@ class TestCreateDepot(unittest.TestCase):
         depot = self.service.create_depot(depot_id, replication)
         self.assertEquals(depot.uuid, depot_id)
         self.assertEquals(depot.var.get_depot_replication_factor(depot), replication)
+        self.assertEquals(self.service.query_depot(depot_id)['depot_id'], depot_id)
+        self.assertEquals(self.service.query_depot(depot_id)['depot_state'], 'not ready')
 
         daemon_spec_list = []
         daemon_spec_list.append({'type': 'mon', 'host': '0895d363-2972-4c40-9f5b-0df2b224a2c6', 'uuid': str(uuid.uuid4())})
@@ -41,6 +43,8 @@ class TestCreateDepot(unittest.TestCase):
         daemon_spec_list.append({'type': 'mds', 'host': 'c8634dc9-ddc6-41c4-ba12-b1d4b5523e2e', 'uuid': str(uuid.uuid4())})
         self.service.add_daemons_to_depot(depot_id, daemon_spec_list)
 
+        self.assertEquals(self.service.query_depot(depot_id)['depot_state'], 'ready')
+        print self.service.query_depot(depot_id)
         daemons = self.service._depot_map[depot_id].get_daemon_list()
         self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('mon')), 3)
         self.assertEquals(len(self.service._depot_map[depot_id].get_daemon_list('osd')), 3)

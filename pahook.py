@@ -22,19 +22,19 @@ _utils = Utils(Resolv())
 _service = TcdsService(_utils, VariableStore())
 
 class TcdsApiErrorResponse(dict):
-    def __init__(self, code, message):
+    def __init__(self, dout, code, message):
         dict.__init__(self)
         self['result_code'] = _service.utils.error_code(code)
         self['error_message'] = '%s' % message
-        pahook._utils.dout(logging.WARNING, str(self), 1)
+        dout(logging.WARNING, str(self), 1)
 
 class TcdsApiSuccessResponse(dict):
-    def __init__(self, additional_fields=None):
+    def __init__(self, dout, additional_fields=None):
         dict.__init__(self)
         self['result_code'] = _service.utils.error_code(_service.utils.SUCCESS)
         if additional_fields is not None:
             self.update(additional_fields)
-        pahook._utils.dout(logging.INFO, str(self), 1)
+        dout(logging.INFO, str(self), 1)
 
 def createDepot(args):
     """
@@ -57,12 +57,12 @@ def createDepot(args):
     try:
         depot = _service.create_depot(NewDepotID, replication_number)
     except Exception as e:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
     else:
         if depot is not None:
-            return TcdsApiSuccessResponse({'depot_id': NewDepotID})
+            return TcdsApiSuccessResponse(_utils.dout, {'depot_id': NewDepotID})
         else:
-            return TcdsApiErrorResponse(_utils.ERROR_GENERAL, 'failed to create depot')
+            return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, 'failed to create depot')
 
 def deleteDepot(args):
     """Takes a depot uuid and deletes the corresponding depot
@@ -74,11 +74,11 @@ def deleteDepot(args):
     try:
         _service.remove_depot(args['depot_id'])
     except KeyError:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse()
+        return TcdsApiSuccessResponse(_utils.dout)
 
 def getDepotInfoList(args):
     """ INPUT
@@ -95,10 +95,10 @@ def getDepotInfoList(args):
         except KeyError:
             _service.utils.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
         except Exception as e:
-            return TcdsApiErrorResponse(_utils.ERROR_GENERAL, e)
+            return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
         else:
             depot_info_list.append(depot_info['depot_info'])
-    return TcdsApiSuccessResponse({'depot_info_list': depot_info_list})
+    return TcdsApiSuccessResponse(_utils.dout, {'depot_info_list': depot_info_list})
 
 def getDepotInfo(args):
     """
@@ -114,11 +114,11 @@ def getDepotInfo(args):
     try:
         depot_info = _service.query_depot(args['depot_id'])
     except KeyError:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse({'depot_info': depot_info})
+        return TcdsApiSuccessResponse(_utils.dout, {'depot_info': depot_info})
 
 def addStorageNodes(args):
     """
@@ -139,11 +139,11 @@ def addStorageNodes(args):
                 daemon_spec_list.append({'type': role, 'host': node['node_id'], 'uuid': str(uuid.uuid4())})
         addedd_daemons_uuids = _service.add_daemons_to_depot(args['depot_id'], daemon_spec_list)
     except KeyError, e:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, 'No such depot. %s' % str(e))
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, 'No such depot. %s' % str(e))
     except Exception as e:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse({'daemons_added': addedd_daemons_uuids})
+        return TcdsApiSuccessResponse(_utils.dout, {'daemons_added': addedd_daemons_uuids})
 
 def removeStorageNodes(args):
     """
@@ -164,8 +164,8 @@ def removeStorageNodes(args):
     try:
         removed_daemons_uuids = _service.del_nodes_from_depot(args['depot_id'], args['node_list'], args['force'])
     except KeyError:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, 'No such depot.')
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:
-        return TcdsApiErrorResponse(_utils.ERROR_GENERAL, e)
+        return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
     else:
-        return TcdsApiSuccessResponse({'daemons_removed': removed_daemons_uuids})
+        return TcdsApiSuccessResponse(_utils.dout, {'daemons_removed': removed_daemons_uuids})

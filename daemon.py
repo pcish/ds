@@ -153,16 +153,20 @@ class Mon(Daemon):
 
         # copy mon data dir from an existing monitor
         (active_mon_ip, active_mon_id) = self.config.get_active_mon_ip()
+        self_ip = self.get_host_ip()
+        cmd = 'mkdir -p %s' % self.config.get('mon', 'mon data').replace('$id',
+            self.get_ceph_name())
+        self.utils.run_remote_command(self_ip, cmd)
         cmd = 'rm -rf %s' % \
             self.config.get('mon', 'mon data').replace('$id', active_mon_id)
-        self.utils.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self_ip, cmd)
         cmd = 'rm -rf %s' % \
             self.config.get('mon', 'mon data').replace('$id',
             self.get_ceph_name())
-        self.utils.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self_ip, cmd)
         cmd = 'scp -r %s:%s %s:%s' % (
             active_mon_ip, self.config.get('mon', 'mon data').replace('$id',
-            active_mon_id), self.get_host_ip(),
+            active_mon_id), self_ip,
             os.path.dirname(self.config.get('mon', 'mon data'))
             )
         self.utils.run_shell_command(cmd)
@@ -171,7 +175,7 @@ class Mon(Daemon):
             self.config.get('mon', 'mon data').replace('$id', active_mon_id),
             self.config.get('mon', 'mon data').replace('$id',
             self.get_ceph_name()))
-        self.utils.run_remote_command(self.get_host_ip(), cmd)
+        self.utils.run_remote_command(self_ip, cmd)
 
     def delete(self):
         cmd = 'ceph -c %s mon remove %s' % (self.conf_file_path,

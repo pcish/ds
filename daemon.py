@@ -124,10 +124,10 @@ class Osd(Daemon):
         cmd = 'ceph -c %s osd out %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
+        self.deactivate()
         cmd = 'ceph -c %s osd down %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)
-        self.deactivate()
 
 
 class Mds(Daemon):

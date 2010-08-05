@@ -26,6 +26,7 @@ class TcdsApiErrorResponse(dict):
         dict.__init__(self)
         self['result_code'] = _service.utils.error_code(code)
         self['error_message'] = '%s' % message
+        pahook._utils.dout(logging.WARNING, str(self), 1)
 
 class TcdsApiSuccessResponse(dict):
     def __init__(self, additional_fields=None):

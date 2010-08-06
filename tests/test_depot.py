@@ -64,7 +64,7 @@ class Test_check_ceph_ids_are_consecutive(unittest.TestCase):
         self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), True)
         daemon_list = self.depot.get_daemon_list()
         for daemon in daemon_list:
-            if daemon.get_uuid() == node_uuid:
+            if daemon.uuid == node_uuid:
                 daemon.set_ceph_name(1)
                 break
         self.assertEquals(self.depot._check_ceph_ids_are_consecutive(), False)

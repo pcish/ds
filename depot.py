@@ -75,7 +75,7 @@ class Depot(object):
             self['depot_replication'] = depot.var.get_depot_replication_factor(depot)
             self['depot_state'] = self.get_state_string(depot.var.get_depot_state(depot))
             libceph = depot.utils.get_libceph(depot.config_file_path)
-            if libceph is None:
+            if libceph is None or self['depot_state'] == 'not ready':
                 self['depot_capacity'] = 0
                 self['depot_usage'] = 0
             else:
@@ -229,12 +229,34 @@ class Depot(object):
         time.sleep(5)   # FIXME: ideas welcome...
 
     def _generate_crushmap(self):
+        """Returns the path to a crushmap that matches the current state
+
+        @rtype  string
+        @return path to an encoded crushmap ready for injection
+        """
         num_osd = self._get_daemon_count()['num_osd']
         cmd = 'osdmaptool --createsimple %s --clobber /tmp/osdmap.junk --export-crush /tmp/crush.new' % (num_osd,)
         self.utils.run_shell_command(cmd)
         return '/tmp/crush.new'
 
     def remove_nodes(self, node_list, force=False):
+        """Removes all daemons whose host is one of the hosts given
+
+        By default, this operation will check that after performing the
+        removal, the depot will remain healty (as per the definition in
+        Depot._get_meets_min_requirements()). If the check fails, the
+        opertaion will be aborted.
+
+        @type  node_list  list
+        @param node_list  list of host machine uuid strings on which to remove
+                          daemons
+        @type  force      boolean
+        @param force      if True, does not perform checks and will always
+                          attempt to remove the target daemons
+
+        @rtype  list
+        @return a list containing the daemon instances removed
+        """
         daemon_list = self.get_daemon_list()
         daemon_count = self._get_daemon_count()
         remove_pending = []
@@ -255,6 +277,11 @@ class Depot(object):
             raise TcdsError('remove_nodes: remove aborted because depot daemon count will fall below min requirements')
 
     def _del_daemons(self, daemons_to_remove):
+        """Deletes and unregisters the given daemons
+
+        @type  daemons_to_remove    list
+        @param daemons_to_remove    list of daemon instances to remove
+        """
         for daemon in daemons_to_remove:
             daemon.delete()
             daemon.del_from_config(self.config)
@@ -263,12 +290,22 @@ class Depot(object):
         self.write_config()
 
     def get_state(self):
+        """Return the value of the state of the depot"""
         return self.var.get_depot_state(self)
 
     def set_state(self, state):
+        """Set the value of the state of the depot"""
         self.var.set_depot_state(self, state)
 
     def get_daemon_list(self, daemon_type='all'):
+        """Return a list of all daemons whose type is daemon_type
+
+        @type  daemon_type  string
+        @param daemon_type  the type of the daemons to return or 'all'
+
+        @rtype  list
+        @return list of all daemons in the depot matching daemon_type
+        """
         if daemon_type == 'all':
             return self._daemon_map.values()
         return_list = []
@@ -278,6 +315,11 @@ class Depot(object):
         return return_list
 
     def _get_daemon_count(self):
+        """Count the number of daemons (by type)
+
+        @rtype  dict
+        @return dict with keys num_<type> and values being the count
+        """
         daemon_list = self.get_daemon_list()
         daemon_count = {'num_mon': 0, 'num_mds':0, 'num_osd':0}
         for daemon in daemon_list:
@@ -285,6 +327,11 @@ class Depot(object):
         return daemon_count
 
     def apply_replication_factor(self, factor):
+        """Apply the replication factor setting to the depot
+
+        @type  factor   int
+        @param factor   the replication factor to apply
+        """
         assert self.config_file_path is not None, 'config_file_path not set'
         cmd = "ceph -c %s osd pool set metadata size %s" % (self.config_file_path, factor)
         self.utils.run_shell_command(cmd)
@@ -294,6 +341,21 @@ class Depot(object):
 
     @staticmethod
     def _get_meets_min_requirements(replication, num_mon, num_mds, num_osd):
+        """Return whether the given number of daemons can form a healthy
+        cluster
+
+        @type  replication  int
+        @param replication  replication factor of the depot to form
+        @type  num_mon      int
+        @param num_mon      number of monitors in the depot to form
+        @type  num_mds      int
+        @param num_mds      number of mds in the depot to form
+        @type  num_osd      int
+        @param num_osd      number of osd in the depot to form
+
+        @rtype  boolean
+        @return True if a healthy depot can be formed
+        """
         if type(replication) is not int \
             or type(num_mon) is not int \
             or type(num_mds) is not int \
@@ -308,6 +370,15 @@ class Depot(object):
             return False
 
     def _get_next_ceph_name_for(self, daemon_type):
+        """Return the next ceph name that should be assigned to a daemon of the
+        given type
+
+        @type  daemon_type  string
+        @param daemon_type  the daemon type for which to fetch the next name
+
+        @rtype  string
+        @return the name that should be assigned to the daemon
+        """
         daemon_list = self.get_daemon_list(daemon_type)
         in_use_names = []
         for daemon in daemon_list:
@@ -321,6 +392,16 @@ class Depot(object):
         return len(in_use_names)
 
     def _check_ceph_ids_are_consecutive(self):
+        """Return whether the ceph names currently in use are consecutive
+
+        Consecutivity is checked individually for each daemon type and the
+        function will only evaluate to True if all daemon types are
+        consecutive. However, names that cannot be interpreted as int (e.g. 'a'
+        ) are ignored and do not affect consecutivity.
+
+        @rtype  boolean
+        @return True if consecutive
+        """
         daemon_list = self.get_daemon_list()
         daemon_list.sort(Mon.cmp_name)
         next_id = {'mon': 0, 'mds': 0, 'osd': 0}
@@ -335,51 +416,84 @@ class Depot(object):
         return True
 
     def write_config(self):
+        """Write the current config to disk"""
         assert self.config_file_path is not None, 'config_file_path not set'
         with open(self.config_file_path, 'wb') as config_file:
             self.config.write(config_file)
 
     def update_daemon_configs(self, daemon_list=None):
+        """Update all daemons (or the given daemons) with the current config
+        and on each daemon's host, write the config to disk."""
         if daemon_list == None:
             daemon_list = self.get_daemon_list()
         for daemon in daemon_list:
             daemon.set_config(self.config)
             daemon.write_config()
 
-    def activate(self):
+    def activate(self, first=True):
+        """Activate (start) the depot (for the first time)
+
+        This function will activate the depot by calling activate() of each
+        daemon and taking necessary pre-activate and post-activate actions.
+        If the depot is being activated for the first time, pass first=True
+        (which is the default). This function will abort if the depot state
+        is not equal to STATE_OFFLINE.
+
+        NB: If this function is called with first=True, the depot will be
+        REFORMED and all data will be LOST.
+
+        @type  first    boolean
+        @param first    pass True if this is the first time the depot is being
+                        activated. Or if you want to reformat...
+
+        @rtype  boolean
+        @return True if the operation completed successfully
+        """
         if self.get_state() != self.CONSTANTS['STATE_OFFLINE']:
             return False
-        daemon_list = self.get_daemon_list()
-        next_id = {'mon': 0, 'mds': 0, 'osd': 0}
-        for daemon in daemon_list:
-            daemon.set_ceph_name(next_id[daemon.TYPE])
-            daemon.add_to_config(self.config)
-            next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
+        if first:
+            daemon_list = self.get_daemon_list()
+            next_id = {'mon': 0, 'mds': 0, 'osd': 0}
+            for daemon in daemon_list:
+                daemon.set_ceph_name(next_id[daemon.TYPE])
+                daemon.add_to_config(self.config)
+                next_id[daemon.TYPE] = next_id[daemon.TYPE] + 1
 
         self.write_config()
         for daemon in daemon_list:
             daemon.set_config(self.config)
 
-        cmd = "mkcephfs -c %s --allhosts" % (self.config_file_path, )
-        self.utils.run_shell_command(cmd)
+        if first:
+            cmd = "mkcephfs -c %s --allhosts" % (self.config_file_path, )
+            self.utils.run_shell_command(cmd)
 
         for daemon in daemon_list:
             daemon.activate()
 
-        self.apply_replication_factor(self.var.get_depot_replication_factor(self))
+        if first:
+            self.apply_replication_factor(self.var.get_depot_replication_factor(self))
         self.set_state(self.CONSTANTS['STATE_ONLINE'])
         return True
 
     def deactivate(self):
+        """Deactivate (stop) the depot and all its daemons"""
         for daemon in self.get_daemon_list():
             daemon.deactivate()
         self.set_state(self.CONSTANTS['STATE_OFFLINE'])
 
     def delete(self):
+        """Delete the depot and all its daemons"""
         self._del_daemons(self.get_daemon_list())
         os.remove(self.config_file_path)
 
     def _check_depot(self):
+        """Returns whether the depot is service
+
+        The check is performed by attempting to write a file to the filesystem
+
+        @rtype  boolean
+        @return True if the depot is in service
+        """
         libceph = self.utils.get_libceph(self.config_file_path)
         retries = 3
         if libceph is None:

@@ -100,6 +100,7 @@ class TcServiceUtils(ServiceUtils):
         self._error_code_map[str(self.ERROR_GENERAL)] = TC_DISTRIBUTED_STORAGE_ERROR
 
     def get_libceph(self, config_file_path):
+        """Returns a LibCeph instance initialized with the given config file"""
         exec 'from tcloud.ds.ceph.libceph import LibCeph'
         return LibCeph(['', '-c', '%s' % config_file_path])
 
@@ -135,6 +136,7 @@ class Tcdb(object):
     """Helper class to connect to TCDB"""
     @staticmethod
     def connect():
+        """Return a psycop2 connection to TCDB"""
         exec 'import psycopg2'
         exec 'import tcloud.util.globalconfig as globalconfig'
         gbConfig = globalconfig.GlobalConfig()
@@ -154,10 +156,13 @@ class Tcdb(object):
 
 
 class Resolv(object):
+    """Base class that provides hostuuid to IP mappings"""
     def uuid_to_ip(self, uuid): pass
 
 
 class LocalResolv(Resolv):
+    """Resolv class used for testing. Performs mapping using an dict that
+    the user can fill"""
     mapping = None
     def __init__(self):
         self.mapping = {}
@@ -170,10 +175,14 @@ class LocalResolv(Resolv):
 
 
 class TcdbResolv(Resolv):
+    """Resolv class that does mapping by querying TCDB"""
     conn = None
-    class ip(object):
+    class ipaddr(object):
+        """Helper class to perform operations on IP addresses"""
         @staticmethod
         def long_to_str(long_ip):
+            """Convert an IP address in long representation to quad-dotted
+            string representation"""
             _MAX_IP = 0xffffffff
             if _MAX_IP < long_ip or long_ip < 0:
                     raise TypeError("expected int between 0 and %d inclusive" % _MAX_IP)
@@ -195,6 +204,6 @@ class TcdbResolv(Resolv):
         cur.close()
         if row is None:
             return KeyError
-        return self.ip.long_to_str(row[0])
+        return self.ipaddr.long_to_str(row[0])
 
 

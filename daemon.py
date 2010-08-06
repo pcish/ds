@@ -190,7 +190,7 @@ class Mds(Daemon):
         config.add_mds(self, self.get_host_ip())
 
     def delete(self):
-    """Deletes the daemon"""
+        """Deletes the daemon"""
         cmd = 'ceph -c %s mds stop %s' % (self.conf_file_path,
             self.get_ceph_name())
         self.utils.run_shell_command(cmd)

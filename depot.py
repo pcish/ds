@@ -80,6 +80,11 @@ class Depot(object):
                     (avail, total) = libceph.df()
                     self['depot_capacity'] = str(total)
                     self['depot_usage'] = str(total - avail)
+                    return
+                else:
+                    depot.utils.dout(logging.INFO, 'returning fake info because get_libceph failed')
+            else:
+                depot.utils.dout(logging.INFO, 'returning fake info because depot is not ready')
             self['depot_capacity'] = 0
             self['depot_usage'] = 0
 

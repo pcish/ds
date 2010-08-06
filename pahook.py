@@ -97,7 +97,7 @@ def getDepotInfoList(args):
         except Exception as e:
             return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, e)
         else:
-            depot_info_list.append(depot_info['depot_info'])
+            depot_info_list.append(depot_info)
     return TcdsApiSuccessResponse(_utils.dout, {'depot_info_list': depot_info_list})
 
 def getDepotInfo(args):

@@ -91,7 +91,7 @@ def getDepotInfoList(args):
     depot_info_list = []
     for depot_id in _service._depot_map.keys():
         try:
-            depot_info = _service.query_depot(depot_id)
+            depot_info = dict(_service.query_depot(depot_id))
         except KeyError:
             _service.utils.dout(logging.WARNING, 'pahook.getDepotInfoList: could not query depot %s' % args)
         except Exception as e:
@@ -112,7 +112,7 @@ def getDepotInfo(args):
     """
     _utils.dout(logging.DEBUG, 'getDepotInfo: called with %s' % args)
     try:
-        depot_info = _service.query_depot(args['depot_id'])
+        depot_info = dict(_service.query_depot(args['depot_id']))
     except KeyError:
         return TcdsApiErrorResponse(_utils.dout, _utils.ERROR_GENERAL, 'No such depot.')
     except Exception as e:

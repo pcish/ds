@@ -74,14 +74,14 @@ class Depot(object):
             self['depot_id'] = depot.uuid
             self['depot_replication'] = depot.var.get_depot_replication_factor(depot)
             self['depot_state'] = self.get_state_string(depot.var.get_depot_state(depot))
-            libceph = depot.utils.get_libceph(depot.config_file_path)
-            if libceph is None or self['depot_state'] == 'not ready':
-                self['depot_capacity'] = 0
-                self['depot_usage'] = 0
-            else:
-                (avail, total) = libceph.df()
-                self['depot_capacity'] = str(total)
-                self['depot_usage'] = str(total - avail)
+            if self['depot_state'] == 'ready':
+                libceph = depot.utils.get_libceph(depot.config_file_path)
+                if libceph is not None:
+                    (avail, total) = libceph.df()
+                    self['depot_capacity'] = str(total)
+                    self['depot_usage'] = str(total - avail)
+            self['depot_capacity'] = 0
+            self['depot_usage'] = 0
 
     def __init__(self, service, uuid):
         self.service = service
